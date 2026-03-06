@@ -20,4 +20,4 @@
           uses: actions/upload-artifact@v4
           with:
             name: report
-            path: report/build/main.pdf
+            path: report/main.pdf
