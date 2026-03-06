@@ -1,7 +1,10 @@
 CC = gcc
-CFLAGS = $(shell pkg-config --cflags gtk4) -Iinclude -I. -MMD -MP
+PKG_CONFIG_CFLAGS := $(shell pkg-config --cflags gtk4)
+PKG_CONFIG_LIBS := $(shell pkg-config --libs gtk4)
+CFLAGS = $(PKG_CONFIG_CFLAGS) -Iinclude -I. -MMD -MP -O2
 DEBUG_FLAGS = -g
-LIBS = $(shell pkg-config --libs gtk4)
+LIBS = $(PKG_CONFIG_LIBS)
+MAKEFLAGS += -j$(shell nproc)
 
 BUILD_DIR = build
 TARGET = $(BUILD_DIR)/gtk-app
@@ -43,6 +46,6 @@ clean:
 run: $(TARGET)
 	$(TARGET)
 
-.PHONY: all clean run debug
+.PHONY: all clean debug run
 
 -include $(DEP)
