@@ -1,0 +1,21 @@
+name: Compile rapport
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Makefile
+        uses: xu-cheng/texlive-action@v1
+        with:
+          run: cd report && make
+
+      - name: Upload PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: report
+          path: report/build/main.pdf
