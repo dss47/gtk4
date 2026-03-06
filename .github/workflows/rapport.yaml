@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run Makefile
-        uses: xu-cheng/texlive-action@v1
+        uses: xu-cheng/latex-action@v4
         with:
           run: cd report && make
 
