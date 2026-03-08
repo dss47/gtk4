@@ -1,8 +1,14 @@
 \section{Module \texttt{display.c}}
 
-Le module \texttt{display.c} prend en charge les widgets d'affichage pur : barre de progression, spinner, label et image. Son rôle est d'exposer des constructeurs simples au-dessus des widgets GTK standards.
+Afficher de l'information statique ou animée sans interaction (labels, barres de progression, images) représente une grande partie de l'interface. Ce module encapsule ces éléments d'affichage pur. En abstrayant les nuances entre une simple image locale et une icône de thème système, le module offre une interface de création homogène, accélérant considérablement le rendu visuel.
 
 \subsection{Fonction \texttt{create\_progress\_bar}}
+
+La barre de progression est le vecteur par excellence du retour visuel d'une application (feedback). L'implémentation de \texttt{create\_progress\_bar} dans ce wrapper va au-delà de la simple définition d'une valeur chiffrée. Elle prend en charge une configuration à multiples facettes pour couvrir des scénarios d'utilisation variés.
+
+Dès l'instanciation, la fonction applique la valeur courante (\texttt{fraction}), mais elle traite immédiatement les modificateurs d'affichage. La capacité à inverser le sens de remplissage (\texttt{gtk\_progress\_bar\_set\_inverted}) est primordiale pour les applications gérant des chronomètres à rebours ou s'adaptant aux standards culturels de lecture de droite à gauche (RTL). L'orientation, qu'elle soit horizontale ou verticale, est prise en compte via un casting sécurisé (\texttt{GTK\_ORIENTABLE}) montrant l'héritage objet du C dans GTK.
+
+Cependant, le véritable apport de logique métier de cette fonction réside dans la gestion asynchrone émulée via le booléen \texttt{pulse\_once}. Lorsqu'une application lance une tâche dont la durée est inconnue (comme une requête réseau lointaine), spécifier une \texttt{fraction} est impossible. En appelant \texttt{gtk\_progress\_bar\_pulse}, la fonction bascule le widget dans un mode d'activité indéterminée, où un bloc visuel effectue des allers-retours continus pour signaler à l'utilisateur que le système n'est pas gelé, préservant ainsi l'ergonomie de l'expérience utilisateur globale.
 
 \begin{lstlisting}[language=C]
 GtkWidget *create_progress_bar(const progress_bar_config *config) {
@@ -39,6 +45,12 @@ Des macros de progression apportent une clarté sémantique sur les valeurs num�
 
 \subsection{Fonction \texttt{create\_spinner}}
 
+Le \texttt{GtkSpinner} est l'alternative moderne et minimaliste à la barre de progression pour signifier une attente (l'équivalent de l'icône de chargement circulaire sur navigateur web). Bien que le widget en lui-même soit trivial, la fonction \texttt{create\_spinner} du wrapper comble une faille ergonomique courante de l'API GTK de base.
+
+Dans GTK4, un \texttt{GtkSpinner} nouvellement créé est statique et invisible s'il ne possède pas une taille requise minimale. Notre implémentation intercepte ce problème en imposant une configuration dimensionnelle via \texttt{gtk\_widget\_set\_size\_request}, forçant le rendu d'un carré parfait si une taille est fournie dans la \texttt{spinner\_config}. 
+
+De plus, l'état d'animation par défaut du widget natif est à l'arrêt. La fonction simplifie le lancement automatique en évaluant la propriété \texttt{spinning} de la configuration. Si le développeur l'exige, \texttt{gtk\_spinner\_start} est appelé lors de l'initialisation, permettant l'injection immédiate d'un indicateur de chargement fonctionnel, dynamique et dimensionné de manière appropriée au sein d'une mise en page complexe.
+
 \begin{lstlisting}[language=C]
 GtkWidget *create_spinner(const spinner_config *config) {
     GtkWidget *spinner = gtk_spinner_new();
@@ -58,6 +70,12 @@ GtkWidget *create_spinner(const spinner_config *config) {
 \end{lstlisting}
 
 \subsection{Fonction \texttt{create\_label}}
+
+Bien que le composant de base par excellence paraisse inoffensif, le texte non maîtrisé est la cause numéro un des ruptures (cassures) d'interfaces graphiques (UI breakage). La fonction \texttt{create\_label} du module agit comme un bouclier architectural en offrant par défaut les outils de gestion du flux textuel.
+
+Une fois le widget initialisé avec un potentiel texte nul pris en charge défensivement, la fonction active les attributs fondamentaux de typographie numérique. L'appel à \texttt{gtk\_label\_set\_selectable} garantit que les informations importantes, comme un hash cryptographique ou un message d'erreur, puissent être surlignées et copiées dans le presse-papiers par l'utilisateur sans nécessiter l'instanciation de champs d'édition (Entry) factices.
+
+La vraie valeur ajoutée de la fonction réside dans son traitement anti-débordement. Plutôt que de laisser un texte interminable repousser les bordures de la fenêtre mère, la conjonction de \texttt{gtk\_label\_set\_wrap} (retour à la ligne automatique) et de \texttt{gtk\_label\_set\_ellipsize} (troncature par points de suspension, qu'elle soit au début, au centre ou à la fin selon la politique Pango choisie) sécurise la mise en page. Pour clore ce filet de sécurité géométrique, le paramètre \texttt{max\_width\_chars} force une coupure matérielle en nombre de caractères, prévenant toute dilatation anarchique d'un conteneur parent.
 
 \begin{lstlisting}[language=C]
 GtkWidget *create_label(const label_config *config) {
@@ -88,6 +106,12 @@ Ces macros appliquent le concept de l'initialisation désignée et des littérau
 \end{lstlisting}
 
 \subsection{Fonction \texttt{create\_image}}
+
+L'affichage d'images dans GTK4 est historiquement fragmenté entre plusieurs widgets selon la source (fichiers locaux, surfaces Cairo en mémoire, icônes thématiques). La fonction \texttt{create\_image} résout cette fragmentation logicielle grâce au polymorphisme de retour (elle retourne un composant du type générique \texttt{GtkWidget*}) et en agissant comme une "Factory" interne qui choisit dynamiquement la bonne implémentation de bas niveau en fonction des champs configurés.
+
+Si un chemin absolu ou relatif (\texttt{file\_path}) est fourni, la logique favorise l'instanciation de \texttt{GtkPicture}, le composant ultra-performant de GTK4 optimisé pour le redimensionnement fluide des bitmaps. En activant \texttt{gtk\_picture\_set\_can\_shrink}, on garantit que l'image locale peut descendre en dessous de sa taille native sans briser les contraintes de mise en page. S'ajoute à cela le contrôle crucial du ratio d'aspect via \texttt{gtk\_picture\_set\_content\_fit} qui choisit entre un zoom couvrant (FILL) ou un zoom conservateur (CONTAIN).
+
+À l'inverse, si la configuration pointe vers une ressource symbolique nommée via \texttt{icon\_name} (ex: "folder-documents-symbolic"), la fonction dévie intelligemment vers l'instanciation d'un objet \texttt{GtkImage} classique, spécialement conçu pour interroger les répertoires de thèmes freedesktop.org au niveau du système d'exploitation. Elle assure également la conformité de l'affichage vectoriel de l'icône en forçant une conversion en taille de pixels stricte via \texttt{gtk\_image\_set\_pixel\_size}. Ce niveau d'abstraction permet au développeur d'application d'ignorer totalement la complexité des API de rendu graphique subjacentes.
 
 \begin{lstlisting}[language=C]
 GtkWidget *create_image(const image_config *config) {

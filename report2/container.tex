@@ -1,10 +1,10 @@
 \section{Module \texttt{container.c}}
 
-Le module \texttt{container.c} rassemble les conteneurs de mise en page du wrapper. Il couvre la grille, la boîte linéaire, la pile de pages et deux helpers complémentaires pour les interfaces multi-vues.
+Les conteneurs sont essentiels pour structurer l'interface. Sans eux, GTK placerait tous les widgets au même endroit. Ce module résout ce problème en abstrayant les logiques de placement via des configurations simples. L'objectif est de permettre au développeur de penser en termes de "lignes", "colonnes" ou "empilement de vues", sans se soucier de l'ordre exact des appels d'initialisation GTK.
 
 \subsection{Fonction \texttt{create\_grid}}
 
-La fonction \texttt{create\_grid} instancie un \texttt{GtkGrid} puis applique l'espacement entre lignes et colonnes ainsi que les options d'homogénéité.
+La grille bidimensionnelle nécessite un réglage minutieux de l'homogénéité et de l'espacement sur deux axes. Cette fonction encapsule ces appels en extrayant simultanément les données pour les lignes et les colonnes de la structure \texttt{grid\_config}, offrant ainsi un point d'entrée unique pour la mise en page d'un formulaire complexe.
 
 \begin{lstlisting}[language=C]
 GtkWidget *create_grid(const grid_config *config) {
@@ -23,6 +23,8 @@ GtkWidget *create_grid(const grid_config *config) {
 \end{lstlisting}
 
 \subsection{Fonction \texttt{create\_box}}
+
+La boîte linéaire est le conteneur le plus utilisé. La fonction utilise l'opérateur ternaire lors de l'instanciation de base pour pallier au fait qu'un pointeur \texttt{NULL} est autorisé en entrée, garantissant ainsi que l'application ne plantera pas si le développeur omet totalement la configuration (elle générera une boîte verticale par défaut).
 
 \begin{lstlisting}[language=C]
 GtkWidget *create_box(const box_config *config) {
@@ -52,6 +54,12 @@ L'utilisation de macros comme \texttt{BOX\_H(sp)} et \texttt{BOX\_V(sp)} démont
 \end{lstlisting}
 
 \subsection{Fonction \texttt{create\_stack}}
+
+Dans le développement d'interfaces modernes, le principe du basculement de vues (navigation à onglets, assistants étape par étape) est omniprésent. Le widget \texttt{GtkStack} est le composant de référence pour cette tâche, et la fonction \texttt{create\_stack} vise à simplifier son intégration au maximum.
+
+L'implémentation de base d'une \texttt{GtkStack} nécessite souvent de multiples appels pour configurer non seulement le comportement du conteneur, mais aussi l'expérience visuelle globale. Notre constructeur adresse directement ces problématiques en extrayant de la structure \texttt{stack\_config} les paramètres cruciaux de l'animation. Ainsi, l'appel à \texttt{gtk\_stack\_set\_transition\_type} définit la nature cinétique du changement de page (fondu, glissement), tandis que \texttt{gtk\_stack\_set\_transition\_duration} paramètre le rythme exact de cette animation en millisecondes. 
+
+Par ailleurs, la fonction intègre intelligemment le contrôle dimensionnel via \texttt{vhomogeneous} et \texttt{hhomogeneous}. Ces réglages évitent les redimensionnements brusques et inesthétiques de la fenêtre globale lorsque l'utilisateur bascule entre une page très dense et une page presque vide, forçant le conteneur à adopter l'empreinte spatiale la plus large requise par ses enfants.
 
 \begin{lstlisting}[language=C]
 GtkWidget *create_stack(const stack_config *config) {
@@ -83,9 +91,13 @@ Les macros de transition et de vitesse permettent de configurer le widget \textt
 #define TRANSITION_SLOW   800
 \end{lstlisting}
 
-\subsection{Helpers complémentaires}
+\subsection{Helpers complémentaires : \texttt{create\_stack\_sidebar} et \texttt{stack\_add\_page}}
 
-Le module ajoute aussi deux helpers pratiques : \texttt{create\_stack\_sidebar}, qui relie une barre latérale à une pile existante, et \texttt{stack\_add\_page}, qui ajoute une page puis renseigne son titre par propriété GTK.
+Le véritable potentiel d'un \texttt{GtkStack} s'exprime lorsqu'il est couplé à un contrôleur externe. C'est ici qu'interviennent les deux helpers conçus par le module. 
+
+La fonction \texttt{create\_stack\_sidebar} automatise la mise en place d'un panneau latéral de navigation. Son implémentation est redoutable de simplicité : elle instancie une \texttt{GtkStackSidebar} et la lie intimement à la pile passée en argument via \texttt{gtk\_stack\_sidebar\_set\_stack}. Dès cet appel, GTK assure une synchronisation bidirectionnelle automatique : les clics dans la barre changent les pages, et les changements de pages (via code) mettent à jour la sélection visuelle dans la barre, sans aucune ligne de logique additionnelle requise de la part du développeur.
+
+La fonction \texttt{stack\_add\_page}, quant à elle, masque l'une des bizarreries de l'API C de GTK4. Historiquement, nommer une page et lui donner un titre lisible nécessitait de manipuler des objets intermédiaires obscurs comme le \texttt{GtkStackPage}. Notre helper contourne cette difficulté architecturale : il insère d'abord le widget enfant avec un identifiant système via \texttt{gtk\_stack\_add\_named}, puis, dans un mouvement fluide, emploie l'introspection objet \texttt{g\_object\_set} pour récupérer discrètement la page générée et forcer l'attribution de la propriété "title". Cela permet d'alimenter directement la \texttt{StackSidebar} évoquée précédemment avec des libellés propres, tout en maintenant le code de l'application cliente purement orienté widgets.
 
 \begin{lstlisting}[language=C]
 GtkWidget *create_stack_sidebar(GtkWidget *stack, const widget_style_config *style) {

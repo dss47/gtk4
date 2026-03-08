@@ -1,10 +1,10 @@
 \section{Module \texttt{window.c}}
 
-Le module \texttt{window.c} construit les fenêtres principales de l'application. Il encapsule la création d'un \texttt{GtkApplicationWindow}, l'application des propriétés usuelles et la gestion d'un fond personnalisé par CSS.
+Toute interface graphique commence par une fenêtre. Ce module isole la complexité liée au cycle de vie de la fenêtre principale et à sa connexion avec \texttt{GtkApplication}. Plutôt que de disperser les appels de redimensionnement, de titre et de thème dans le \texttt{main.c}, cette architecture force la définition de la fenêtre dans un état consolidé, rendant le code de démarrage robuste et facile à maintenir.
 
 \subsection{Fonction \texttt{apply\_window\_background}}
 
-Cette fonction privée applique un style CSS ciblé sur une seule fenêtre. L'idée est de nommer le widget puis de générer dynamiquement une règle CSS qui peut définir soit une couleur de fond seule, soit une couleur combinée à une image.
+Cette fonction privée illustre la puissance de la manipulation dynamique du style sous GTK4. Plutôt que de forcer l'utilisateur à créer et gérer manuellement des fichiers \texttt{.css} externes, cette fonction embarque la logique de génération CSS à la volée. Elle commence par attribuer un nom unique au widget (\texttt{gtk\_widget\_set\_name}) pour créer un sélecteur CSS ciblé. Ensuite, à l'aide de la fonction \texttt{g\_strdup\_printf} de la GLib, elle construit une chaîne de caractères représentant une règle CSS complète. Cette approche hybride permet de gérer élégamment deux cas de figure très courants : l'application d'une simple couleur unie ou le chargement d'une image de fond complète qui recouvrira l'intégralité de la fenêtre. La gestion rigoureuse de la mémoire (\texttt{g\_free} et \texttt{g\_object\_unref}) en fin de fonction prévient toute fuite lors du cycle de vie de l'application.
 
 \begin{lstlisting}[language=C]
 static void apply_window_background(const window_config *config, GtkWidget *window) {
@@ -57,7 +57,11 @@ static void apply_window_background(const window_config *config, GtkWidget *wind
 
 \subsection{Fonction \texttt{create\_window}}
 
-La fonction principale du module instancie la fenêtre, applique les propriétés déclarées dans \texttt{window\_config}, délègue la personnalisation visuelle à \texttt{apply\_window\_background} puis applique le style commun partagé avec les autres widgets.
+La fonction \texttt{create\_window} agit comme le chef d'orchestre pour l'instanciation de la fenêtre principale. Elle prend en charge la lourde tâche d'ordonnancer correctement les multiples appels nécessaires à la mise en place d'un \texttt{GtkApplicationWindow} moderne et fonctionnel. 
+
+Dès le début, l'implémentation adopte une approche défensive : si la configuration passée est nulle, elle retourne une fenêtre vide mais valide, empêchant ainsi l'application de s'effondrer sur un défaut de pointeur. Par la suite, elle déroule séquentiellement l'application des métadonnées (titre, icône, nom interne pour le débogage), puis configure le comportement physique de la fenêtre (dimensions par défaut, contraintes minimales via \texttt{gtk\_widget\_set\_size\_request}, redimensionnabilité). 
+
+Un point fort de cette implémentation réside dans la délégation de la complexité visuelle. Au lieu d'alourdir cette fonction, elle transfère le traitement du fond à \texttt{apply\_window\_background} et la configuration des marges/alignements à la fonction universelle \texttt{apply\_widget\_style}. Enfin, les drapeaux \texttt{maximized} et \texttt{present\_on\_create} assurent que la fenêtre est immédiatement projetée à l'écran dans l'état voulu par le développeur, encapsulant totalement la logique fastidieuse de mappage et d'affichage de la boucle d'événements GTK.
 
 \begin{lstlisting}[language=C]
 GtkWidget *create_window(GtkApplication *app, const window_config *config) {

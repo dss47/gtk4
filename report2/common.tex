@@ -1,10 +1,10 @@
 \section{Module \texttt{common.c}}
 
-Le module \texttt{common.c} fournit la couche de style commune à l'ensemble du wrapper. Il évite la duplication de code en regroupant dans une seule fonction l'application des classes CSS, des marges, de l'alignement, de l'expansion et des métadonnées de confort comme l'infobulle.
+Ce module constitue l'épine dorsale visuelle du projet. Au lieu de laisser le développeur réécrire les mêmes blocs de code pour chaque widget (marges, expansion, alignement), \texttt{common.c} factorise toutes les propriétés héritées de la classe \texttt{GtkWidget} de GTK. Cela permet de garantir que l'application d'un style est unifiée et prédictible, quel que soit le composant instancié.
 
 \subsection{Fonction \texttt{apply\_widget\_style}}
 
-La fonction \texttt{apply\_widget\_style} prend un widget GTK déjà créé et lui applique les attributs décrits dans \texttt{widget\_style\_config}. L'implémentation distingue bien les valeurs toujours appliquées, comme les marges, et les valeurs conditionnelles, pilotées par des indicateurs \texttt{set\_*}.
+Cette fonction agit comme un intercepteur universel. Au lieu d'appeler manuellement \texttt{gtk\_widget\_set\_margin\_*} pour chaque bouton ou label, le développeur passe une sous-structure \texttt{style}. L'implémentation est conçue de manière défensive : elle vérifie méthodiquement la présence de pointeurs non nuls et évalue des drapeaux booléens (comme \texttt{set\_halign}) pour garantir qu'aucune propriété GTK n'est écrasée involontairement si elle n'a pas été explicitement demandée par l'utilisateur.
 
 \begin{lstlisting}[language=C]
 void apply_widget_style(GtkWidget *widget, const widget_style_config *style) {

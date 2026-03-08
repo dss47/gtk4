@@ -1,10 +1,16 @@
 \section{Module \texttt{input.c}}
 
-Le module \texttt{input.c} regroupe les composants de saisie. Il encapsule trois widgets principaux : l'entrée de texte, la liste déroulante moderne et le bouton numérique à incréments.
+L'interaction utilisateur repose majoritairement sur la saisie de données. Ce module simplifie drastiquement la création de formulaires en masquant la configuration complexe des \texttt{GtkEntry}, des listes déroulantes (\texttt{GtkDropDown}), et des sélecteurs numériques. L'idée est de passer d'une logique procédurale ("créer un widget, puis lui ajouter un filtre numérique, puis définir sa limite") à une déclaration claire ("je veux un champ qui n'accepte que des nombres de 0 à 100").
 
 \subsection{Fonction \texttt{create\_entry}}
 
-Cette fonction prépare un \texttt{GtkEntry} puis applique le placeholder, le texte initial, le type de saisie attendu et les éventuelles contraintes de visibilité ou de longueur.
+L'entrée de texte, widget \texttt{GtkEntry}, constitue la pierre angulaire de toute application nécessitant des informations alphanumériques de la part de l'utilisateur. La complexité de cette implémentation, bien que camouflée derrière un prototype simple, gère de multiples protocoles d'accessibilité et de sécurité applicative.
+
+Tout d'abord, la fonction adresse le problème récurrent des zones fantômes d'interaction : un champ vide est muet et perturbant. En injectant un éventuel \texttt{placeholder} via \texttt{gtk\_entry\_set\_placeholder\_text}, elle assure une indication sémantique persistante jusqu'à la première frappe de l'utilisateur. En parallèle, elle convertit dynamiquement la chaîne \texttt{purpose\_hint} (par exemple "url", "email" ou "number") via une fonction interne \texttt{parse\_input\_purpose} afin d'informer le gestionnaire d'affichage système du type de donnée attendu. Sur un environnement mobile, tactile, ou lors de l'utilisation d'un clavier virtuel On-Screen Keyboard (OSK), ce seul appel adapte le clavier contextuellement, prouvant la réactivité du composant aux contraintes multiplateformes.
+
+Dans le registre de la sécurité logicielle, la gestion des mots de passe s'active grâce à un simple drapeau booléen. Lorsque la propriété \texttt{password} est validée, l'appel à \texttt{gtk\_entry\_set\_visibility} avec la valeur \texttt{FALSE} est émis. Cela obfusque immédiatement l'affichage des caractères en direct, le plus souvent remplacés par des points sécurisés, tout en préservant le stockage de la chaîne en mémoire tampon (buffer). Cette abstraction décharge le développeur des mécanismes manuels de masquage de chaînes. 
+
+Enfin, la fonction intègre une limitation quantitative de saisie (le \texttt{max\_length}). C'est une prévention technique robuste face aux potentielles attaques par débordement de capacité (buffer overflow) sur la base de données qui récupérera les informations à l'autre bout de l'application, instaurant ainsi un contrat de sûreté dès l'Interface Utilisateur.
 
 \begin{lstlisting}[language=C]
 GtkWidget *create_entry(const entry_config *config) {
@@ -48,6 +54,12 @@ Ces macros de création directe agissent comme un véritable mini-langage dédi�
 
 \subsection{Fonction \texttt{create\_dropdown}}
 
+Le vieux composant \texttt{GtkComboBoxText} s'avérait lourd, lent et nécessitait la gestion fastidieuse de modèles abstraits (les \texttt{GtkTreeModel}) même pour des listes de choix rudimentaires. Notre implémentation embrasse pleinement la transition vers la modernité offerte par GTK4 à travers le \texttt{GtkDropDown}, optimisant drastiquement le flux de travail.
+
+La prouesse de \texttt{create\_dropdown} repose sur la fonction spécifique \texttt{gtk\_drop\_down\_new\_from\_strings}. En acceptant directement un simple tableau de chaînes en C à terminaison nulle (null-terminated char array) issu de la structure \texttt{dropdown\_config}, elle occulte entièrement la mécanique interne de création des \texttt{GtkStringList} et la tuyauterie des expressions de modèles d'arbres. Ce raccourci architectural autorise l'initialisation de listes d'options considérables en à peine quelques lignes de code pur, propulsant les performances d'instanciation de l'interface.
+
+Dans une logique d'ergonomie avancée, la fonction offre une arme décisive pour naviguer dans de grands ensembles de données : l'activation conditionnelle de la recherche intégrée via \texttt{gtk\_drop\_down\_set\_enable\_search}. Si ce drapeau est actif, le wrapper greffe de manière transparente une zone de filtrage au-dessus du menu déroulant dès que l'utilisateur l'ouvre. Couplé au branchement direct d'un callback sur le signal "notify::selected" (qui avertit dynamiquement le programmeur des changements d'état par introspection d'objets GLib), ce composant se présente comme une interface de sélection haut de gamme, clef en main, pour un coût d'implémentation dérisoire.
+
 \begin{lstlisting}[language=C]
 GtkWidget *create_dropdown(const dropdown_config *config) {
     GtkWidget *dropdown;
@@ -70,6 +82,12 @@ GtkWidget *create_dropdown(const dropdown_config *config) {
 \end{lstlisting}
 
 \subsection{Fonction \texttt{create\_spin\_button}}
+
+Un champ d'entrée standard (\texttt{GtkEntry}) est peu pertinent, voire risqué, pour gérer de la donnée exclusivement numérique nécessitant de l'incrémentation (comme un volume, une année, un âge ou une tarification). Le \texttt{GtkSpinButton} adresse cette problématique, mais son implémentation native souffre d'une complexité décourageante pour les néophytes, exigeant l'orchestration parallèle d'un modèle mathématique de comportement. Notre fonction \texttt{create\_spin\_button} unifie cette dualité en un seul composant cohérent.
+
+Le cœur névralgique de ce widget n'est pas son rendu visuel, mais son moteur de règles, appelé le \texttt{GtkAdjustment}. Ce modèle défini via \texttt{gtk\_adjustment\_new} encapsule tous les paramètres mathématiques du composant dans une unique allocation mémoire : la valeur initiale, la limite plancher (\texttt{min\_value}), le plafond absolu (\texttt{max\_value}), la taille d'un saut mineur au clic d'une flèche (\texttt{step}), et la taille d'un saut majeur souvent lié aux touches PageUp/PageDown du clavier (\texttt{page}). En générant et en attachant automatiquement cet objet au widget visuel lors de l'appel à \texttt{gtk\_spin\_button\_new}, notre fonction épargne au développeur la corvée de gestion du cycle de vie des objets intermédiaires de la GLib.
+
+Une fois la base logique arrimée, la fonction affine l'expérience utilisateur de manière granulaire. L'invocation de \texttt{gtk\_spin\_button\_set\_numeric} verrouille impitoyablement la frappe libre sur le clavier, rejetant tout caractère non valide à la source avant même la validation d'un formulaire, agissant comme un filtre (sanitizer) robuste. Enfin, si la propriété \texttt{wrap} est déclenchée via \texttt{gtk\_spin\_button\_set\_wrap}, elle confère au composant un comportement cyclique continu (atteindre le maximum et incrémenter relance le compteur au minimum, idéal pour le réglage d'horloges, comme le passage de 23h à 00h). De bout en bout, la fonction transforme un composant fragmenté en un outil de saisie hautement paramétrable et inaltérable.
 
 \begin{lstlisting}[language=C]
 GtkWidget *create_spin_button(const spin_button_config *config) {

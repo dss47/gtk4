@@ -1,10 +1,16 @@
 \section{Module \texttt{button.c}}
 
-Le module \texttt{button.c} regroupe la création des boutons standards et des boutons radio. Il ajoute au widget GTK de base une logique de thème, d'icône et de raccordement de callbacks.
+Les boutons sont les déclencheurs primaires d'actions. Ce module centralise la logique de création des boutons, qu'ils soient textuels, iconiques ou un mélange des deux. L'apport majeur de ce wrapper est d'intégrer directement le raccordement des signaux (callbacks) lors de la création, éliminant ainsi le risque d'oublier l'appel à \texttt{g\_signal\_connect} plus loin dans le code.
 
 \subsection{Fonction \texttt{create\_button}}
 
-La fonction \texttt{create\_button} traite plusieurs cas d'usage avec une seule interface : bouton texte, bouton avec mnémonique, bouton avec icône, ou combinaison texte plus icône. La variante de thème est appliquée séparément via une fonction interne dédiée.
+La fonction \texttt{create\_button} est conçue comme un point de rassemblement central pour toutes les formes de déclencheurs interactifs dans GTK. Historiquement, un développeur devait maîtriser différentes fonctions (\texttt{gtk\_button\_new\_with\_label}, \texttt{gtk\_button\_new\_with\_mnemonic}) et jongler avec des conteneurs supplémentaires s'il souhaitait ajouter une icône. Notre approche rationalise drastiquement ce processus.
+
+Dans le corps de la fonction, la première étape logique consiste à discriminer le type de texte demandé. L'utilisation du drapeau booléen \texttt{use\_underline} oriente dynamiquement l'appel vers la fonction de création appropriée, permettant ainsi de supporter nativement les raccourcis clavier (mnémoniques) cruciaux pour l'accessibilité. 
+
+La véritable complexité encapsulée par cette fonction apparaît lors de la gestion des icônes conjointes au texte. Si le champ \texttt{icon\_name} est renseigné, le code bascule d'une simple création textuelle vers la construction transparente d'une hiérarchie de widgets. Il instancie silencieusement une \texttt{GtkBox} interne, y insère une \texttt{GtkImage} configurée avec la taille précise exigée par l'API système, ajoute un \texttt{GtkLabel}, et intègre le tout comme unique enfant du bouton via \texttt{gtk\_button\_set\_child}. 
+
+Cette automatisation cache complètement les rouages de la composition d'interface à l'utilisateur final. Enfin, la fonction s'assure d'injecter immédiatement les données métier (\texttt{user\_data}) et la fonction de rappel (\texttt{on\_clicked}) au signal d'activation, bouclant ainsi la création visuelle et fonctionnelle en un seul appel unifié.
 
 \begin{lstlisting}[language=C]
 GtkWidget *create_button(const button_config *config) {
@@ -55,7 +61,11 @@ Les macros de variantes de thèmes (\texttt{BTN\_PRIMARY}, etc.) permettent de s
 
 \subsection{Fonction \texttt{create\_radio\_button}}
 
-Le wrapper radio repose sur \texttt{GtkCheckButton}, comme le recommande GTK4. Le groupement exclusif est obtenu en reliant un bouton au précédent du groupe.
+Historiquement complexes à gérer, les boutons radio sont ici simplifiés par une interface déclarative directe. L'implémentation de \texttt{create\_radio\_button} reflète le nouveau standard de GTK4 qui a fusionné les anciens \texttt{GtkRadioButton} au profit d'un composant universel \texttt{GtkCheckButton} gérant des groupes logiques.
+
+Le cœur de cette fonction repose sur un mécanisme d'enchaînement élégant. Au lieu de forcer le développeur à gérer lui-même une liste chaînée externe ou un objet groupe abstrait (comme le \texttt{GSList} sous GTK3), la configuration accepte simplement un pointeur vers un bouton précédemment créé (via le champ \texttt{group\_with}). La fonction vérifie la validité de ce pointeur et, si confirmé, utilise \texttt{gtk\_check\_button\_set\_group} pour raccorder mathématiquement le nouveau widget au groupe d'exclusion existant.
+
+Ce paradigme réduit drastiquement les erreurs logiques de l'utilisateur. De plus, la définition immédiate de l'état par défaut (le booléen \texttt{is\_active}) et le branchement instantané de la callback sur l'événement \texttt{toggled} complètent l'initialisation. Le développeur n'a plus qu'à déclarer ses options l'une après l'autre, laissant le wrapper tisser les liens d'exclusivité en arrière-plan.
 
 \begin{lstlisting}[language=C]
 GtkWidget *create_radio_button(const radio_button_config *config) {
