@@ -1,0 +1,124 @@
+\section{Module \texttt{window.c}}
+
+Le module \texttt{window.c} construit les fenêtres principales de l'application. Il encapsule la création d'un \texttt{GtkApplicationWindow}, l'application des propriétés usuelles et la gestion d'un fond personnalisé par CSS.
+
+\subsection{Fonction \texttt{apply\_window\_background}}
+
+Cette fonction privée applique un style CSS ciblé sur une seule fenêtre. L'idée est de nommer le widget puis de générer dynamiquement une règle CSS qui peut définir soit une couleur de fond seule, soit une couleur combinée à une image.
+
+\begin{lstlisting}[language=C]
+static void apply_window_background(const window_config *config, GtkWidget *window) {
+    if (config == NULL || window == NULL || config->background_color == NULL || config->background_color[0] == '\0') {
+        return;
+    }
+
+    const char *name = config->widget_name;
+    if (name == NULL || name[0] == '\0') {
+        name = "wrapper-window";
+        gtk_widget_set_name(window, name);
+    }
+
+    GtkCssProvider *provider = gtk_css_provider_new();
+    char *css;
+
+    if (config->background_image_path != NULL && config->background_image_path[0] != '\0') {
+        css = g_strdup_printf(
+            "window#%s, window#%s > * {"
+            "background-color: %s;"
+            "background-image: url('%s');"
+            "background-size: cover;"
+            "background-position: center;"
+            "}",
+            name,
+            name,
+            config->background_color,
+            config->background_image_path
+        );
+    } else {
+        css = g_strdup_printf(
+            "window#%s, window#%s > * { background-color: %s; }",
+            name,
+            name,
+            config->background_color
+        );
+    }
+
+    gtk_css_provider_load_from_string(provider, css);
+    gtk_style_context_add_provider_for_display(
+        gtk_widget_get_display(window),
+        GTK_STYLE_PROVIDER(provider),
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+    );
+
+    g_free(css);
+    g_object_unref(provider);
+}
+\end{lstlisting}
+
+\subsection{Fonction \texttt{create\_window}}
+
+La fonction principale du module instancie la fenêtre, applique les propriétés déclarées dans \texttt{window\_config}, délègue la personnalisation visuelle à \texttt{apply\_window\_background} puis applique le style commun partagé avec les autres widgets.
+
+\begin{lstlisting}[language=C]
+GtkWidget *create_window(GtkApplication *app, const window_config *config) {
+    GtkWidget *window = gtk_application_window_new(app);
+    if (config == NULL) {
+        return window;
+    }
+
+    if (config->title) {
+        gtk_window_set_title(GTK_WINDOW(window), config->title);
+    }
+    if (config->icon_name) {
+        gtk_window_set_icon_name(GTK_WINDOW(window), config->icon_name);
+    }
+    if (config->widget_name) {
+        gtk_widget_set_name(window, config->widget_name);
+    }
+
+    gtk_window_set_default_size(GTK_WINDOW(window), config->default_width, config->default_height);
+    gtk_window_set_resizable(GTK_WINDOW(window), config->resizable);
+    gtk_window_set_decorated(GTK_WINDOW(window), config->decorated);
+    gtk_window_set_modal(GTK_WINDOW(window), config->modal);
+
+    if (config->min_width > 0 || config->min_height > 0) {
+        gtk_widget_set_size_request(window, config->min_width, config->min_height);
+    }
+
+    apply_window_background(config, window);
+    apply_widget_style(window, &config->style);
+
+    if (config->maximized) {
+        gtk_window_maximize(GTK_WINDOW(window));
+    }
+    if (config->present_on_create) {
+        gtk_window_present(GTK_WINDOW(window));
+    }
+
+    return window;
+}
+\end{lstlisting}
+
+\subsection{APIs GTK utilisées}
+
+\begin{center}
+\begin{tabular}{|l|p{8cm}|}
+\hline
+\textbf{API} & \textbf{Rôle} \\
+\hline
+\texttt{gtk\_application\_window\_new()} & Crée une fenêtre associée à une instance de \texttt{GtkApplication}. \\
+\hline
+\texttt{gtk\_widget\_set\_name()} & Attribue un identifiant CSS au widget pour cibler une seule fenêtre. \\
+\hline
+\texttt{gtk\_css\_provider\_new()} & Prépare un fournisseur de style CSS chargé dynamiquement. \\
+\hline
+\texttt{gtk\_style\_context\_add\_provider\_for\_display()} & Enregistre le style CSS au niveau de l'affichage. \\
+\hline
+\texttt{gtk\_window\_set\_default\_size()} & Définit la taille initiale de la fenêtre. \\
+\hline
+\texttt{gtk\_window\_present()} & Affiche la fenêtre et demande le focus. \\
+\hline
+\end{tabular}
+\end{center}
+
+\newpage

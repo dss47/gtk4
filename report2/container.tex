@@ -1,0 +1,107 @@
+\section{Module \texttt{container.c}}
+
+Le module \texttt{container.c} rassemble les conteneurs de mise en page du wrapper. Il couvre la grille, la boîte linéaire, la pile de pages et deux helpers complémentaires pour les interfaces multi-vues.
+
+\subsection{Fonction \texttt{create\_grid}}
+
+La fonction \texttt{create\_grid} instancie un \texttt{GtkGrid} puis applique l'espacement entre lignes et colonnes ainsi que les options d'homogénéité.
+
+\begin{lstlisting}[language=C]
+GtkWidget *create_grid(const grid_config *config) {
+    GtkWidget *grid = gtk_grid_new();
+    if (config == NULL) {
+        return grid;
+    }
+
+    gtk_grid_set_column_spacing(GTK_GRID(grid), config->column_spacing);
+    gtk_grid_set_row_spacing(GTK_GRID(grid), config->row_spacing);
+    gtk_grid_set_column_homogeneous(GTK_GRID(grid), config->homogeneous_columns);
+    gtk_grid_set_row_homogeneous(GTK_GRID(grid), config->homogeneous_rows);
+    apply_widget_style(grid, &config->style);
+    return grid;
+}
+\end{lstlisting}
+
+\subsection{Fonction \texttt{create\_box}}
+
+\begin{lstlisting}[language=C]
+GtkWidget *create_box(const box_config *config) {
+    GtkWidget *box = gtk_box_new(
+        config ? config->orientation : GTK_ORIENTATION_VERTICAL,
+        config ? config->spacing : 0
+    );
+    if (config == NULL) {
+        return box;
+    }
+
+    gtk_box_set_homogeneous(GTK_BOX(box), config->homogeneous);
+    apply_widget_style(box, &config->style);
+    return box;
+}
+\end{lstlisting}
+
+\subsection{Fonction \texttt{create\_stack}}
+
+\begin{lstlisting}[language=C]
+GtkWidget *create_stack(const stack_config *config) {
+    GtkWidget *stack = gtk_stack_new();
+    if (config == NULL) {
+        return stack;
+    }
+
+    gtk_stack_set_transition_type(GTK_STACK(stack), config->transition);
+    gtk_stack_set_transition_duration(GTK_STACK(stack), config->duration_ms);
+    gtk_stack_set_vhomogeneous(GTK_STACK(stack), config->vhomogeneous);
+    gtk_stack_set_hhomogeneous(GTK_STACK(stack), config->hhomogeneous);
+    apply_widget_style(stack, &config->style);
+    return stack;
+}
+\end{lstlisting}
+
+\subsection{Helpers complémentaires}
+
+Le module ajoute aussi deux helpers pratiques : \texttt{create\_stack\_sidebar}, qui relie une barre latérale à une pile existante, et \texttt{stack\_add\_page}, qui ajoute une page puis renseigne son titre par propriété GTK.
+
+\begin{lstlisting}[language=C]
+GtkWidget *create_stack_sidebar(GtkWidget *stack, const widget_style_config *style) {
+    GtkWidget *sidebar = gtk_stack_sidebar_new();
+    if (stack != NULL) {
+        gtk_stack_sidebar_set_stack(GTK_STACK_SIDEBAR(sidebar), GTK_STACK(stack));
+    }
+    apply_widget_style(sidebar, style);
+    return sidebar;
+}
+
+void stack_add_page(GtkWidget *stack, GtkWidget *child, const char *name, const char *title) {
+    if (stack == NULL || child == NULL || name == NULL || title == NULL) {
+        return;
+    }
+
+    gtk_stack_add_named(GTK_STACK(stack), child, name);
+    g_object_set(gtk_stack_get_page(GTK_STACK(stack), child), "title", title, NULL);
+}
+\end{lstlisting}
+
+\subsection{APIs GTK utilisées}
+
+\begin{center}
+\begin{tabular}{|l|p{8cm}|}
+\hline
+\textbf{API} & \textbf{Rôle} \\
+\hline
+\texttt{gtk\_grid\_new()} & Crée un conteneur en grille. \\
+\hline
+\texttt{gtk\_box\_new()} & Crée un conteneur linéaire horizontal ou vertical. \\
+\hline
+\texttt{gtk\_stack\_new()} & Crée un conteneur à pages multiples. \\
+\hline
+\texttt{gtk\_stack\_sidebar\_new()} & Crée le widget de navigation latérale lié à une pile. \\
+\hline
+\texttt{gtk\_stack\_add\_named()} & Ajoute une page identifiée dans la pile. \\
+\hline
+\texttt{g\_object\_set()} & Attribue le titre de page utilisé par les widgets de navigation. \\
+\hline
+\end{tabular}
+\end{center}
+
+\newpage

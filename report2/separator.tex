@@ -1,0 +1,29 @@
+\section{Module \texttt{separator.c}}
+
+Le module \texttt{separator.c} est volontairement minimal. Il fournit un simple constructeur pour les séparateurs visuels, tout en restant cohérent avec le reste du wrapper grâce à \texttt{widget\_style\_config}.
+
+\subsection{Fonction \texttt{create\_separator}}
+
+\begin{lstlisting}[language=C]
+GtkWidget *create_separator(const separator_config *config) {
+    GtkWidget *separator = gtk_separator_new(config ? config->orientation : GTK_ORIENTATION_HORIZONTAL);
+    if (config != NULL) {
+        apply_widget_style(separator, &config->style);
+    }
+    return separator;
+}
+\end{lstlisting}
+
+\subsection{APIs GTK utilisées}
+
+\begin{center}
+\begin{tabular}{|l|p{8cm}|}
+\hline
+\textbf{API} & \textbf{Rôle} \\
+\hline
+\texttt{gtk\_separator\_new()} & Crée un séparateur horizontal ou vertical selon l'orientation demandée. \\
+\hline
+\end{tabular}
+\end{center}
+
+\newpage

@@ -1,0 +1,94 @@
+\section{Module \texttt{button.c}}
+
+Le module \texttt{button.c} regroupe la création des boutons standards et des boutons radio. Il ajoute au widget GTK de base une logique de thème, d'icône et de raccordement de callbacks.
+
+\subsection{Fonction \texttt{create\_button}}
+
+La fonction \texttt{create\_button} traite plusieurs cas d'usage avec une seule interface : bouton texte, bouton avec mnémonique, bouton avec icône, ou combinaison texte plus icône. La variante de thème est appliquée séparément via une fonction interne dédiée.
+
+\begin{lstlisting}[language=C]
+GtkWidget *create_button(const button_config *config) {
+    GtkWidget *button;
+    const char *label;
+
+    if (config == NULL) {
+        return gtk_button_new();
+    }
+
+    label = config->label ? config->label : "";
+    button = config->use_underline ? gtk_button_new_with_mnemonic(label) : gtk_button_new_with_label(label);
+    gtk_button_set_has_frame(GTK_BUTTON(button), config->has_frame);
+    gtk_button_set_can_shrink(GTK_BUTTON(button), config->can_shrink);
+
+    if (config->icon_name && config->icon_name[0] != '\0') {
+        GtkWidget *content = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+        GtkWidget *icon = gtk_image_new_from_icon_name(config->icon_name);
+        GtkWidget *text = config->use_underline ? gtk_label_new_with_mnemonic(label) : gtk_label_new(label);
+        if (config->icon_size > 0) {
+            gtk_image_set_pixel_size(GTK_IMAGE(icon), config->icon_size);
+        }
+        gtk_box_append(GTK_BOX(content), icon);
+        gtk_box_append(GTK_BOX(content), text);
+        gtk_button_set_child(GTK_BUTTON(button), content);
+    }
+
+    apply_theme_variant(button, config->theme_variant);
+    apply_widget_style(button, &config->style);
+
+    if (config->on_clicked) {
+        g_signal_connect(button, "clicked", G_CALLBACK(config->on_clicked), config->user_data);
+    }
+
+    return button;
+}
+\end{lstlisting}
+
+\subsection{Fonction \texttt{create\_radio\_button}}
+
+Le wrapper radio repose sur \texttt{GtkCheckButton}, comme le recommande GTK4. Le groupement exclusif est obtenu en reliant un bouton au précédent du groupe.
+
+\begin{lstlisting}[language=C]
+GtkWidget *create_radio_button(const radio_button_config *config) {
+    GtkWidget *button = gtk_check_button_new_with_label(config && config->label ? config->label : "");
+
+    if (config == NULL) {
+        return button;
+    }
+
+    if (config->group_with != NULL) {
+        gtk_check_button_set_group(GTK_CHECK_BUTTON(button), GTK_CHECK_BUTTON(config->group_with));
+    }
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(button), config->is_active);
+    apply_widget_style(button, &config->style);
+
+    if (config->on_toggled) {
+        g_signal_connect(button, "toggled", G_CALLBACK(config->on_toggled), config->user_data);
+    }
+
+    return button;
+}
+\end{lstlisting}
+
+\subsection{APIs GTK utilisées}
+
+\begin{center}
+\begin{tabular}{|l|p{8cm}|}
+\hline
+\textbf{API} & \textbf{Rôle} \\
+\hline
+\texttt{gtk\_button\_new\_with\_label()} & Crée un bouton texte simple. \\
+\hline
+\texttt{gtk\_button\_new\_with\_mnemonic()} & Active les raccourcis clavier fondés sur un underscore dans le label. \\
+\hline
+\texttt{gtk\_button\_set\_child()} & Remplace le contenu interne du bouton par un conteneur personnalisé. \\
+\hline
+\texttt{gtk\_image\_new\_from\_icon\_name()} & Construit l'icône à partir du thème courant. \\
+\hline
+\texttt{gtk\_check\_button\_set\_group()} & Regroupe plusieurs boutons en sélection exclusive. \\
+\hline
+\texttt{g\_signal\_connect()} & Connecte les signaux \texttt{clicked} et \texttt{toggled} aux callbacks fournis. \\
+\hline
+\end{tabular}
+\end{center}
+
+\newpage

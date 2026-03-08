@@ -1,0 +1,116 @@
+\section{Module \texttt{dialog.c}}
+
+Le module \texttt{dialog.c} implémente les boîtes d'alerte asynchrones. Il s'appuie sur \texttt{GtkAlertDialog}, qui ne bloque pas l'exécution du programme et impose donc un traitement différé de la réponse utilisateur.
+
+\subsection{Callback interne \texttt{on\_alert\_response}}
+
+Cette fonction récupère le résultat asynchrone, transforme une éventuelle erreur en indice \texttt{-1}, puis transmet la réponse au callback utilisateur avant de libérer les ressources temporaires.
+
+\begin{lstlisting}[language=C]
+static void on_alert_response(GObject *source_object, GAsyncResult *result, gpointer user_data) {
+    (void)source_object;
+    alert_async_context *ctx = user_data;
+    GError *error = NULL;
+    int index = gtk_alert_dialog_choose_finish(ctx->dialog, result, &error);
+    if (error != NULL) {
+        g_error_free(error);
+        index = -1;
+    }
+    if (ctx->on_response != NULL) {
+        ctx->on_response(index, ctx->user_data);
+    }
+    g_object_unref(ctx->dialog);
+    g_free(ctx);
+}
+\end{lstlisting}
+
+\subsection{Fonction \texttt{show\_alert\_dialog}}
+
+La fonction publique configure le message, les détails, la modalité et la liste des boutons. Elle déduit aussi le bouton par défaut et le bouton d'annulation à partir de la configuration avant d'afficher le dialogue en mode synchrone visuel mais asynchrone du point de vue du code.
+
+\begin{lstlisting}[language=C]
+void show_alert_dialog(const alert_dialog_config *config) {
+    GtkAlertDialog *dialog;
+    const char **buttons;
+
+    if (config == NULL || config->message == NULL) {
+        return;
+    }
+
+    dialog = gtk_alert_dialog_new("%s", config->message);
+    if (config->detail != NULL) {
+        gtk_alert_dialog_set_detail(dialog, config->detail);
+    }
+    gtk_alert_dialog_set_modal(dialog, config->modal);
+
+    if (config->button_count > 0 && config->buttons != NULL) {
+        buttons = g_new0(const char *, config->button_count + 1);
+        for (size_t i = 0; i < config->button_count; i++) {
+            buttons[i] = config->buttons[i].label;
+        }
+        gtk_alert_dialog_set_buttons(dialog, buttons);
+        g_free(buttons);
+    }
+
+    int default_button = config->default_button;
+    int cancel_button = config->cancel_button;
+
+    if (config->buttons != NULL && config->button_count > 0) {
+        for (size_t i = 0; i < config->button_count; i++) {
+            const char *appearance = config->buttons[i].appearance;
+            if (appearance == NULL) {
+                continue;
+            }
+            if (default_button < 0 && strcmp(appearance, "suggested") == 0) {
+                default_button = (int)i;
+            }
+            if (cancel_button < 0 && strcmp(appearance, "cancel") == 0) {
+                cancel_button = (int)i;
+            }
+        }
+    }
+
+    if (default_button >= 0) {
+        gtk_alert_dialog_set_default_button(dialog, default_button);
+    }
+    if (cancel_button >= 0) {
+        gtk_alert_dialog_set_cancel_button(dialog, cancel_button);
+    }
+
+    if (config->on_response != NULL) {
+        alert_async_context *ctx = g_new0(alert_async_context, 1);
+        ctx->dialog = g_object_ref(dialog);
+        ctx->on_response = config->on_response;
+        ctx->user_data = config->user_data;
+        gtk_alert_dialog_choose(dialog, config->parent, NULL, on_alert_response, ctx);
+    } else {
+        gtk_alert_dialog_show(dialog, config->parent);
+    }
+
+    g_object_unref(dialog);
+}
+\end{lstlisting}
+
+\subsection{APIs GTK utilisées}
+
+\begin{center}
+\begin{tabular}{|l|p{8cm}|}
+\hline
+\textbf{API} & \textbf{Rôle} \\
+\hline
+\texttt{gtk\_alert\_dialog\_new()} & Crée le dialogue d'alerte GTK4. \\
+\hline
+\texttt{gtk\_alert\_dialog\_set\_buttons()} & Définit l'ensemble des boutons proposés à l'utilisateur. \\
+\hline
+\texttt{gtk\_alert\_dialog\_set\_default\_button()} & Choisit le bouton activé par défaut. \\
+\hline
+\texttt{gtk\_alert\_dialog\_choose()} & Lance l'affichage asynchrone avec callback de fin. \\
+\hline
+\texttt{gtk\_alert\_dialog\_choose\_finish()} & Récupère l'indice du bouton choisi dans le résultat asynchrone. \\
+\hline
+\texttt{gtk\_alert\_dialog\_show()} & Affiche le dialogue sans traitement de réponse personnalisé. \\
+\hline
+\end{tabular}
+\end{center}
+
+\newpage

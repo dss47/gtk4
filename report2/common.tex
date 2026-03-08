@@ -1,0 +1,80 @@
+\section{Module \texttt{common.c}}
+
+Le module \texttt{common.c} fournit la couche de style commune à l'ensemble du wrapper. Il évite la duplication de code en regroupant dans une seule fonction l'application des classes CSS, des marges, de l'alignement, de l'expansion et des métadonnées de confort comme l'infobulle.
+
+\subsection{Fonction \texttt{apply\_widget\_style}}
+
+La fonction \texttt{apply\_widget\_style} prend un widget GTK déjà créé et lui applique les attributs décrits dans \texttt{widget\_style\_config}. L'implémentation distingue bien les valeurs toujours appliquées, comme les marges, et les valeurs conditionnelles, pilotées par des indicateurs \texttt{set\_*}.
+
+\begin{lstlisting}[language=C]
+void apply_widget_style(GtkWidget *widget, const widget_style_config *style) {
+    if (widget == NULL || style == NULL) {
+        return;
+    }
+
+    if (style->css_class && style->css_class[0] != '\0') {
+        gtk_widget_add_css_class(widget, style->css_class);
+    }
+    if (style->css_classes != NULL) {
+        for (int i = 0; style->css_classes[i] != NULL; i++) {
+            gtk_widget_add_css_class(widget, style->css_classes[i]);
+        }
+    }
+
+    if (style->width_request != 0 || style->height_request != 0) {
+        gtk_widget_set_size_request(widget, style->width_request, style->height_request);
+    }
+
+    gtk_widget_set_margin_top(widget, style->margin_top);
+    gtk_widget_set_margin_bottom(widget, style->margin_bottom);
+    gtk_widget_set_margin_start(widget, style->margin_start);
+    gtk_widget_set_margin_end(widget, style->margin_end);
+
+    if (style->set_halign) {
+        gtk_widget_set_halign(widget, style->halign);
+    }
+    if (style->set_valign) {
+        gtk_widget_set_valign(widget, style->valign);
+    }
+    if (style->set_hexpand) {
+        gtk_widget_set_hexpand(widget, style->hexpand);
+    }
+    if (style->set_vexpand) {
+        gtk_widget_set_vexpand(widget, style->vexpand);
+    }
+    if (style->set_sensitive) {
+        gtk_widget_set_sensitive(widget, style->sensitive);
+    }
+    if (style->set_visible) {
+        gtk_widget_set_visible(widget, style->visible);
+    }
+
+    if (style->tooltip && style->tooltip[0] != '\0') {
+        gtk_widget_set_tooltip_text(widget, style->tooltip);
+    }
+}
+\end{lstlisting}
+
+\subsection{APIs GTK utilisées}
+
+\begin{center}
+\begin{tabular}{|l|p{8cm}|}
+\hline
+\textbf{API} & \textbf{Rôle} \\
+\hline
+\texttt{gtk\_widget\_add\_css\_class()} & Ajoute une ou plusieurs classes CSS à un widget. \\
+\hline
+\texttt{gtk\_widget\_set\_size\_request()} & Fixe une taille minimale souhaitée. \\
+\hline
+\texttt{gtk\_widget\_set\_margin\_top()} et variantes & Applique les marges externes du widget. \\
+\hline
+\texttt{gtk\_widget\_set\_halign()} et \texttt{gtk\_widget\_set\_valign()} & Positionne le widget dans l'espace disponible. \\
+\hline
+\texttt{gtk\_widget\_set\_hexpand()} et \texttt{gtk\_widget\_set\_vexpand()} & Indique si le widget peut occuper l'espace libre du conteneur. \\
+\hline
+\texttt{gtk\_widget\_set\_tooltip\_text()} & Définit le texte affiché au survol. \\
+\hline
+\end{tabular}
+\end{center}
+
+\newpage
