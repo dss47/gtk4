@@ -6,6 +6,17 @@
 
 #include "common.h"
 
+/* Entry Shortcuts */
+#define CREATE_PASSWORD_ENTRY(ph) create_entry(&(entry_config){.placeholder = ph, .password = true, .purpose_hint = "password"})
+#define CREATE_NUMERIC_ENTRY(ph)  create_entry(&(entry_config){.placeholder = ph, .purpose_hint = "number"})
+#define CREATE_EMAIL_ENTRY(ph)    create_entry(&(entry_config){.placeholder = ph, .purpose_hint = "email"})
+#define CREATE_URL_ENTRY(ph)      create_entry(&(entry_config){.placeholder = ph, .purpose_hint = "url"})
+
+/* Spin Button Presets */
+#define SPIN_PERCENT(v) (spin_button_config){.min_value = 0, .max_value = 100, .step = 1, .value = v, .digits = 0}
+#define SPIN_AGE(v)     (spin_button_config){.min_value = 0, .max_value = 120, .step = 1, .value = v, .digits = 0}
+#define SPIN_YEAR(v)    (spin_button_config){.min_value = 1900, .max_value = 2100, .step = 1, .value = v, .digits = 0}
+
 typedef struct {
     const char *placeholder;
     const char *default_text;

@@ -6,6 +6,29 @@
 
 #include "common.h"
 
+/* Orientation Aliases */
+#define ORIENT_HORIZ GTK_ORIENTATION_HORIZONTAL
+#define ORIENT_VERT  GTK_ORIENTATION_VERTICAL
+
+/* Box Shortcuts */
+#define BOX_H(sp) (box_config){.orientation = ORIENT_HORIZ, .spacing = sp}
+#define BOX_V(sp) (box_config){.orientation = ORIENT_VERT, .spacing = sp}
+
+/* Stack Transitions */
+#define TRANSITION_NONE         GTK_STACK_TRANSITION_TYPE_NONE
+#define TRANSITION_CROSSFADE    GTK_STACK_TRANSITION_TYPE_CROSSFADE
+#define TRANSITION_SLIDE_LEFT   GTK_STACK_TRANSITION_TYPE_SLIDE_LEFT
+#define TRANSITION_SLIDE_RIGHT  GTK_STACK_TRANSITION_TYPE_SLIDE_RIGHT
+#define TRANSITION_SLIDE_UP     GTK_STACK_TRANSITION_TYPE_SLIDE_UP
+#define TRANSITION_SLIDE_DOWN   GTK_STACK_TRANSITION_TYPE_SLIDE_DOWN
+#define TRANSITION_OVER_UP      GTK_STACK_TRANSITION_TYPE_OVER_UP
+#define TRANSITION_UNDER_DOWN   GTK_STACK_TRANSITION_TYPE_UNDER_DOWN
+
+/* Transition Speeds (ms) */
+#define TRANSITION_FAST   250
+#define TRANSITION_NORMAL 400
+#define TRANSITION_SLOW   800
+
 typedef struct {
     int column_spacing;
     int row_spacing;

@@ -6,6 +6,15 @@
 
 #include "common.h"
 
+/* Label Shortcuts */
+#define CREATE_TITLE(t)    create_label(&(label_config){.text = t, .style = {.css_class = "title-1", .margin_bottom = 12}})
+#define CREATE_SUBTITLE(t) create_label(&(label_config){.text = t, .style = {.css_class = "title-2", .margin_bottom = 8}})
+
+/* Progress Bar Presets */
+#define PROGRESS_START 0.0
+#define PROGRESS_HALF  0.5
+#define PROGRESS_FULL  1.0
+
 typedef struct {
     double fraction;
     const char *text;

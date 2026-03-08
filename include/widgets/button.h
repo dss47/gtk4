@@ -6,6 +6,12 @@
 
 #include "common.h"
 
+/* Button Theme Variants */
+#define BTN_PRIMARY "primary"
+#define BTN_SUCCESS "success"
+#define BTN_DANGER  "danger"
+#define BTN_WARNING "warning"
+
 typedef struct {
     const char *label;
     const char *icon_name;

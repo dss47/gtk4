@@ -4,6 +4,19 @@
 #include <gtk/gtk.h>
 #include <stdbool.h>
 
+/* Alignment Aliases */
+#define ALIGN_START  GTK_ALIGN_START
+#define ALIGN_END    GTK_ALIGN_END
+#define ALIGN_CENTER GTK_ALIGN_CENTER
+#define ALIGN_FILL   GTK_ALIGN_FILL
+
+/* Standard Margins */
+#define MARGIN_NONE   0
+#define MARGIN_TINY   4
+#define MARGIN_SMALL  8
+#define MARGIN_MEDIUM 16
+#define MARGIN_LARGE  24
+
 typedef struct {
     const char *css_class;
     const char **css_classes;
