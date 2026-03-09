@@ -20,6 +20,9 @@ typedef struct {
   GtkWidget *progress;
   GtkWidget *spinner;
   GtkWidget *switch_widget;
+  GtkWidget *icon_size_label;
+  GtkWidget *icon_preview;
+  int icon_counter;
   bool spinner_running;
 } showcase_state;
 
@@ -138,6 +141,333 @@ static void on_toggle_spinner(GtkButton *button, gpointer user_data) {
     gtk_spinner_stop(GTK_SPINNER(state->spinner));
     set_status(state, "Spinner stopped");
   }
+}
+
+static void on_icon_btn_clicked(GtkButton *button, gpointer user_data) {
+  (void)button;
+  showcase_state *state = user_data;
+  state->icon_counter++;
+  char msg[96];
+  g_snprintf(msg, sizeof(msg), "Icon button clicked %d time(s)", state->icon_counter);
+  set_status(state, msg);
+}
+
+static void on_star_clicked(GtkButton *button, gpointer user_data) {
+  (void)button;
+  set_status((showcase_state *)user_data, "Starred!");
+}
+
+static void on_copy_clicked(GtkButton *button, gpointer user_data) {
+  (void)button;
+  set_status((showcase_state *)user_data, "Copied to clipboard");
+}
+
+static void on_search_clicked(GtkButton *button, gpointer user_data) {
+  (void)button;
+  set_status((showcase_state *)user_data, "Search activated");
+}
+
+static void on_home_clicked(GtkButton *button, gpointer user_data) {
+  (void)button;
+  set_status((showcase_state *)user_data, "Navigated home");
+}
+
+static void on_zoom_in(GtkButton *button, gpointer user_data) {
+  (void)button;
+  showcase_state *state = user_data;
+  int size = gtk_image_get_pixel_size(GTK_IMAGE(state->icon_preview));
+  if (size < 128) {
+    size += 8;
+    gtk_image_set_pixel_size(GTK_IMAGE(state->icon_preview), size);
+  }
+  char msg[64];
+  g_snprintf(msg, sizeof(msg), "%d px", size);
+  gtk_label_set_text(GTK_LABEL(state->icon_size_label), msg);
+  set_status(state, "Zoomed in");
+}
+
+static void on_zoom_out(GtkButton *button, gpointer user_data) {
+  (void)button;
+  showcase_state *state = user_data;
+  int size = gtk_image_get_pixel_size(GTK_IMAGE(state->icon_preview));
+  if (size > 16) {
+    size -= 8;
+    gtk_image_set_pixel_size(GTK_IMAGE(state->icon_preview), size);
+  }
+  char msg[64];
+  g_snprintf(msg, sizeof(msg), "%d px", size);
+  gtk_label_set_text(GTK_LABEL(state->icon_size_label), msg);
+  set_status(state, "Zoomed out");
+}
+
+static void on_icon_selected(GtkDropDown *dropdown, GParamSpec *pspec,
+                             gpointer user_data) {
+  (void)pspec;
+  showcase_state *state = user_data;
+  static const char *icons[] = {
+      "applications-development-symbolic", "face-smile-symbolic",
+      "weather-clear-symbolic", "dialog-warning-symbolic",
+      "emblem-favorite-symbolic", "audio-volume-high-symbolic"};
+  guint idx = gtk_drop_down_get_selected(dropdown);
+  if (idx < G_N_ELEMENTS(icons)) {
+    gtk_image_set_from_icon_name(GTK_IMAGE(state->icon_preview), icons[idx]);
+    char msg[96];
+    g_snprintf(msg, sizeof(msg), "Icon changed to: %s", icons[idx]);
+    set_status(state, msg);
+  }
+}
+
+static GtkWidget *make_icons_page(showcase_state *state) {
+  GtkWidget *box = create_box(&(box_config){
+      .orientation = GTK_ORIENTATION_VERTICAL,
+      .spacing = 12,
+      .homogeneous = false,
+      .style = {.margin_top = 16,
+                .margin_bottom = 16,
+                .margin_start = 16,
+                .margin_end = 16},
+  });
+
+  /* Row of themed icons at different sizes */
+  gtk_box_append(GTK_BOX(box), create_label(&(label_config){
+      .text = "System Icons",
+      .style = {.css_class = "title-2", .margin_bottom = 4},
+  }));
+
+  GtkWidget *icon_row = create_box(&(box_config){
+      .orientation = GTK_ORIENTATION_HORIZONTAL,
+      .spacing = 16,
+      .homogeneous = false,
+      .style = {.halign = GTK_ALIGN_CENTER, .set_halign = true},
+  });
+  gtk_box_append(GTK_BOX(icon_row), create_image(&(image_config){
+      .icon_name = "dialog-information-symbolic", .pixel_size = 32,
+      .style = {.tooltip = "Information"}}));
+  gtk_box_append(GTK_BOX(icon_row), create_image(&(image_config){
+      .icon_name = "dialog-warning-symbolic", .pixel_size = 32,
+      .style = {.tooltip = "Warning"}}));
+  gtk_box_append(GTK_BOX(icon_row), create_image(&(image_config){
+      .icon_name = "dialog-error-symbolic", .pixel_size = 32,
+      .style = {.tooltip = "Error"}}));
+  gtk_box_append(GTK_BOX(icon_row), create_image(&(image_config){
+      .icon_name = "emblem-favorite-symbolic", .pixel_size = 32,
+      .style = {.tooltip = "Favorite"}}));
+  gtk_box_append(GTK_BOX(icon_row), create_image(&(image_config){
+      .icon_name = "face-smile-symbolic", .pixel_size = 32,
+      .style = {.tooltip = "Smile"}}));
+  gtk_box_append(GTK_BOX(icon_row), create_image(&(image_config){
+      .icon_name = "weather-clear-symbolic", .pixel_size = 32,
+      .style = {.tooltip = "Weather"}}));
+  gtk_box_append(GTK_BOX(box), icon_row);
+
+  gtk_box_append(GTK_BOX(box), create_separator(&(separator_config){
+      .orientation = GTK_ORIENTATION_HORIZONTAL}));
+
+  /* Interactive icon preview with zoom */
+  gtk_box_append(GTK_BOX(box), create_label(&(label_config){
+      .text = "Interactive Icon Preview",
+      .style = {.css_class = "title-2", .margin_bottom = 4},
+  }));
+
+  state->icon_preview = create_image(&(image_config){
+      .icon_name = "applications-development-symbolic",
+      .pixel_size = 48,
+      .style = {.halign = GTK_ALIGN_CENTER, .set_halign = true},
+  });
+  state->icon_size_label = create_label(&(label_config){
+      .text = "48 px",
+      .style = {.halign = GTK_ALIGN_CENTER, .set_halign = true},
+  });
+
+  const char *icon_choices[] = {
+      "Development", "Smile", "Weather",
+      "Warning", "Favorite", "Audio", NULL};
+  GtkWidget *icon_picker = create_dropdown(&(dropdown_config){
+      .options = icon_choices,
+      .selected_index = 0,
+      .enable_search = false,
+      .style = {.width_request = 200,
+                .halign = GTK_ALIGN_CENTER, .set_halign = true},
+      .on_selected = on_icon_selected,
+      .user_data = state,
+  });
+
+  GtkWidget *zoom_row = create_box(&(box_config){
+      .orientation = GTK_ORIENTATION_HORIZONTAL,
+      .spacing = 8,
+      .style = {.halign = GTK_ALIGN_CENTER, .set_halign = true},
+  });
+  gtk_box_append(GTK_BOX(zoom_row), create_button(&(button_config){
+      .label = NULL, .icon_name = "zoom-out-symbolic",
+      .theme_variant = "flat", .has_frame = false, .icon_size = 16,
+      .style = {.tooltip = "Zoom Out"},
+      .on_clicked = on_zoom_out, .user_data = state}));
+  gtk_box_append(GTK_BOX(zoom_row), state->icon_size_label);
+  gtk_box_append(GTK_BOX(zoom_row), create_button(&(button_config){
+      .label = NULL, .icon_name = "zoom-in-symbolic",
+      .theme_variant = "flat", .has_frame = false, .icon_size = 16,
+      .style = {.tooltip = "Zoom In"},
+      .on_clicked = on_zoom_in, .user_data = state}));
+
+  gtk_box_append(GTK_BOX(box), state->icon_preview);
+  gtk_box_append(GTK_BOX(box), zoom_row);
+  gtk_box_append(GTK_BOX(box), icon_picker);
+  return box;
+}
+
+static GtkWidget *make_toolbar_page(showcase_state *state) {
+  GtkWidget *box = create_box(&(box_config){
+      .orientation = GTK_ORIENTATION_VERTICAL,
+      .spacing = 14,
+      .homogeneous = false,
+      .style = {.margin_top = 16,
+                .margin_bottom = 16,
+                .margin_start = 16,
+                .margin_end = 16},
+  });
+
+  /* Icon-only toolbar */
+  gtk_box_append(GTK_BOX(box), create_label(&(label_config){
+      .text = "Icon-Only Toolbar",
+      .style = {.css_class = "title-2", .margin_bottom = 4},
+  }));
+
+  GtkWidget *toolbar = create_box(&(box_config){
+      .orientation = GTK_ORIENTATION_HORIZONTAL,
+      .spacing = 4,
+      .style = {.halign = GTK_ALIGN_CENTER, .set_halign = true},
+  });
+  gtk_box_append(GTK_BOX(toolbar), create_button(&(button_config){
+      .icon_name = "document-new-symbolic", .has_frame = true,
+      .icon_size = 20, .style = {.tooltip = "New"},
+      .on_clicked = on_icon_btn_clicked, .user_data = state}));
+  gtk_box_append(GTK_BOX(toolbar), create_button(&(button_config){
+      .icon_name = "document-open-symbolic", .has_frame = true,
+      .icon_size = 20, .style = {.tooltip = "Open"},
+      .on_clicked = on_icon_btn_clicked, .user_data = state}));
+  gtk_box_append(GTK_BOX(toolbar), create_button(&(button_config){
+      .icon_name = "document-save-symbolic", .has_frame = true,
+      .icon_size = 20, .style = {.tooltip = "Save"},
+      .on_clicked = on_icon_btn_clicked, .user_data = state}));
+  gtk_box_append(GTK_BOX(toolbar), create_separator(&(separator_config){
+      .orientation = GTK_ORIENTATION_VERTICAL,
+      .style = {.margin_start = 4, .margin_end = 4}}));
+  gtk_box_append(GTK_BOX(toolbar), create_button(&(button_config){
+      .icon_name = "edit-cut-symbolic", .has_frame = true,
+      .icon_size = 20, .style = {.tooltip = "Cut"},
+      .on_clicked = on_icon_btn_clicked, .user_data = state}));
+  gtk_box_append(GTK_BOX(toolbar), create_button(&(button_config){
+      .icon_name = "edit-copy-symbolic", .has_frame = true,
+      .icon_size = 20, .style = {.tooltip = "Copy"},
+      .on_clicked = on_copy_clicked, .user_data = state}));
+  gtk_box_append(GTK_BOX(toolbar), create_button(&(button_config){
+      .icon_name = "edit-paste-symbolic", .has_frame = true,
+      .icon_size = 20, .style = {.tooltip = "Paste"},
+      .on_clicked = on_icon_btn_clicked, .user_data = state}));
+  gtk_box_append(GTK_BOX(toolbar), create_separator(&(separator_config){
+      .orientation = GTK_ORIENTATION_VERTICAL,
+      .style = {.margin_start = 4, .margin_end = 4}}));
+  gtk_box_append(GTK_BOX(toolbar), create_button(&(button_config){
+      .icon_name = "edit-undo-symbolic", .has_frame = true,
+      .icon_size = 20, .style = {.tooltip = "Undo"},
+      .on_clicked = on_icon_btn_clicked, .user_data = state}));
+  gtk_box_append(GTK_BOX(toolbar), create_button(&(button_config){
+      .icon_name = "edit-redo-symbolic", .has_frame = true,
+      .icon_size = 20, .style = {.tooltip = "Redo"},
+      .on_clicked = on_icon_btn_clicked, .user_data = state}));
+  gtk_box_append(GTK_BOX(box), toolbar);
+
+  gtk_box_append(GTK_BOX(box), create_separator(&(separator_config){
+      .orientation = GTK_ORIENTATION_HORIZONTAL}));
+
+  /* Labeled icon buttons */
+  gtk_box_append(GTK_BOX(box), create_label(&(label_config){
+      .text = "Labeled Icon Buttons",
+      .style = {.css_class = "title-2", .margin_bottom = 4},
+  }));
+
+  GtkWidget *btn_grid = create_grid(&(grid_config){
+      .column_spacing = 10, .row_spacing = 10,
+      .style = {.halign = GTK_ALIGN_CENTER, .set_halign = true},
+  });
+
+  gtk_grid_attach(GTK_GRID(btn_grid), create_button(&(button_config){
+      .label = "Home", .icon_name = "go-home-symbolic",
+      .theme_variant = "primary", .has_frame = true,
+      .icon_size = 16, .style = {.width_request = 130},
+      .on_clicked = on_home_clicked, .user_data = state}), 0, 0, 1, 1);
+
+  gtk_grid_attach(GTK_GRID(btn_grid), create_button(&(button_config){
+      .label = "Search", .icon_name = "system-search-symbolic",
+      .theme_variant = "primary", .has_frame = true,
+      .icon_size = 16, .style = {.width_request = 130},
+      .on_clicked = on_search_clicked, .user_data = state}), 1, 0, 1, 1);
+
+  gtk_grid_attach(GTK_GRID(btn_grid), create_button(&(button_config){
+      .label = "Star", .icon_name = "starred-symbolic",
+      .theme_variant = "success", .has_frame = true,
+      .icon_size = 16, .style = {.width_request = 130},
+      .on_clicked = on_star_clicked, .user_data = state}), 0, 1, 1, 1);
+
+  gtk_grid_attach(GTK_GRID(btn_grid), create_button(&(button_config){
+      .label = "Copy", .icon_name = "edit-copy-symbolic",
+      .theme_variant = "success", .has_frame = true,
+      .icon_size = 16, .style = {.width_request = 130},
+      .on_clicked = on_copy_clicked, .user_data = state}), 1, 1, 1, 1);
+
+  gtk_grid_attach(GTK_GRID(btn_grid), create_button(&(button_config){
+      .label = "Refresh", .icon_name = "view-refresh-symbolic",
+      .theme_variant = "flat", .has_frame = false,
+      .icon_size = 16, .style = {.width_request = 130},
+      .on_clicked = on_icon_btn_clicked, .user_data = state}), 0, 2, 1, 1);
+
+  gtk_grid_attach(GTK_GRID(btn_grid), create_button(&(button_config){
+      .label = "Delete", .icon_name = "edit-delete-symbolic",
+      .theme_variant = "danger", .has_frame = true,
+      .icon_size = 16, .style = {.width_request = 130},
+      .on_clicked = on_icon_btn_clicked, .user_data = state}), 1, 2, 1, 1);
+
+  gtk_box_append(GTK_BOX(box), btn_grid);
+
+  gtk_box_append(GTK_BOX(box), create_separator(&(separator_config){
+      .orientation = GTK_ORIENTATION_HORIZONTAL}));
+
+  /* Navigation row */
+  gtk_box_append(GTK_BOX(box), create_label(&(label_config){
+      .text = "Navigation",
+      .style = {.css_class = "title-2", .margin_bottom = 4},
+  }));
+  GtkWidget *nav = create_box(&(box_config){
+      .orientation = GTK_ORIENTATION_HORIZONTAL,
+      .spacing = 6,
+      .style = {.halign = GTK_ALIGN_CENTER, .set_halign = true},
+  });
+  gtk_box_append(GTK_BOX(nav), create_button(&(button_config){
+      .icon_name = "go-previous-symbolic", .has_frame = true,
+      .icon_size = 20, .style = {.tooltip = "Back"},
+      .on_clicked = on_icon_btn_clicked, .user_data = state}));
+  gtk_box_append(GTK_BOX(nav), create_button(&(button_config){
+      .icon_name = "go-home-symbolic", .has_frame = true,
+      .icon_size = 20, .style = {.tooltip = "Home"},
+      .on_clicked = on_home_clicked, .user_data = state}));
+  gtk_box_append(GTK_BOX(nav), create_button(&(button_config){
+      .icon_name = "go-next-symbolic", .has_frame = true,
+      .icon_size = 20, .style = {.tooltip = "Forward"},
+      .on_clicked = on_icon_btn_clicked, .user_data = state}));
+  gtk_box_append(GTK_BOX(nav), create_separator(&(separator_config){
+      .orientation = GTK_ORIENTATION_VERTICAL,
+      .style = {.margin_start = 4, .margin_end = 4}}));
+  gtk_box_append(GTK_BOX(nav), create_button(&(button_config){
+      .icon_name = "view-refresh-symbolic", .has_frame = true,
+      .icon_size = 20, .style = {.tooltip = "Refresh"},
+      .on_clicked = on_icon_btn_clicked, .user_data = state}));
+  gtk_box_append(GTK_BOX(nav), create_button(&(button_config){
+      .icon_name = "view-fullscreen-symbolic", .has_frame = true,
+      .icon_size = 20, .style = {.tooltip = "Fullscreen"},
+      .on_clicked = on_icon_btn_clicked, .user_data = state}));
+  gtk_box_append(GTK_BOX(box), nav);
+
+  return box;
 }
 
 static GtkWidget *make_inputs_page(showcase_state *state) {
@@ -599,6 +929,8 @@ static GtkWidget *build_showcase(GtkApplication *app, GtkWindow *window,
   stack_add_page(stack, make_toggles_page(state), "toggles", "Toggles");
   stack_add_page(stack, make_displays_page(state), "displays", "Displays");
   stack_add_page(stack, make_dialogs_page(state), "dialogs", "Dialogs");
+  stack_add_page(stack, make_icons_page(state), "icons", "Icons & Images");
+  stack_add_page(stack, make_toolbar_page(state), "toolbar", "Toolbar");
 
   gtk_box_append(GTK_BOX(hbox), sidebar);
   gtk_box_append(GTK_BOX(hbox), stack);
@@ -635,8 +967,7 @@ void demo_app_start(GtkApplication *app, gpointer user_data) {
                              .title = "GTK UI Wrapper Showcasea",
                               .icon_name = "applications-development-symbolic",
                               .widget_name = "wrapper-window",
-                              // .background_color = "#86cde7",
-                              .background_image_path = NULL,
+                              .background_image_path = "image.png",
                              .default_width = 700,
                              .default_height = 300,
                              .min_width = 400,

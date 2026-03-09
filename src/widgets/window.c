@@ -1,7 +1,13 @@
 #include "widgets/window.h"
 
 static void apply_window_background(const window_config *config, GtkWidget *window) {
-    if (config == NULL || window == NULL || config->background_color == NULL || config->background_color[0] == '\0') {
+    if (config == NULL || window == NULL) {
+        return;
+    }
+
+    bool has_color = config->background_color != NULL && config->background_color[0] != '\0';
+    bool has_image = config->background_image_path != NULL && config->background_image_path[0] != '\0';
+    if (!has_color && !has_image) {
         return;
     }
 
@@ -14,7 +20,7 @@ static void apply_window_background(const window_config *config, GtkWidget *wind
     GtkCssProvider *provider = gtk_css_provider_new();
     char *css;
 
-    if (config->background_image_path != NULL && config->background_image_path[0] != '\0') {
+    if (has_image && has_color) {
         css = g_strdup_printf(
             "window#%s, window#%s > * {"
             "background-color: %s;"
@@ -22,16 +28,24 @@ static void apply_window_background(const window_config *config, GtkWidget *wind
             "background-size: cover;"
             "background-position: center;"
             "}",
-            name,
-            name,
+            name, name,
             config->background_color,
+            config->background_image_path
+        );
+    } else if (has_image) {
+        css = g_strdup_printf(
+            "window#%s, window#%s > * {"
+            "background-image: url('%s');"
+            "background-size: cover;"
+            "background-position: center;"
+            "}",
+            name, name,
             config->background_image_path
         );
     } else {
         css = g_strdup_printf(
             "window#%s, window#%s > * { background-color: %s; }",
-            name,
-            name,
+            name, name,
             config->background_color
         );
     }
