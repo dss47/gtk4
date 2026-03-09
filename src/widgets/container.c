@@ -1,9 +1,7 @@
 #include "widgets/container.h"
 
-
-GtkWidget *container_add(GtkWidget *container, GtkWidget *child, int a, int b,
-                         int c, int d)
-{
+GtkWidget *container_add(GtkWidget *container, GtkWidget *child, int col, int row,
+                         int width, int height) {
     if (container == NULL || child == NULL) {
         return NULL;
     }
@@ -14,16 +12,16 @@ GtkWidget *container_add(GtkWidget *container, GtkWidget *child, int a, int b,
     }
 
     if (GTK_IS_GRID(container)) {
-        gtk_grid_attach(GTK_GRID(container), child, a, b, c, d);
+        gtk_grid_attach(GTK_GRID(container), child, col, row, width, height);
+        return child;
+    }
+
+    if (GTK_IS_WINDOW(container)) {
+        gtk_window_set_child(GTK_WINDOW(container), child);
         return child;
     }
 
     return NULL;
-}
-
-GtkWidget *grid_add(GtkWidget *grid, GtkWidget *child, int a, int b, int c, int d)
-{
-    return container_add(grid, child, a, b, c, d);
 }
 
 GtkWidget *create_grid(const grid_config *config) {

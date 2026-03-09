@@ -56,10 +56,8 @@ typedef struct
     bool hhomogeneous;
     widget_style_config style;
 } stack_config;
-GtkWidget *container_add(GtkWidget *container, GtkWidget *child, int a, int b,
-                         int c, int d);
-GtkWidget *grid_add(GtkWidget *grid, GtkWidget *child, int a, int b, int c,
-                    int d);
+GtkWidget *container_add(GtkWidget *container, GtkWidget *child, int col, int row,
+                         int width, int height);
 GtkWidget *create_grid(const grid_config *config);
 GtkWidget *create_box(const box_config *config);
 GtkWidget *create_stack(const stack_config *config);
