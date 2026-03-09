@@ -20,7 +20,14 @@ SRC = main.c src/demo_app.c \
 	src/widgets/separator.c \
 	src/widgets/dialog.c \
 	src/widgets/menu.c \
-	src/widgets/theme.c
+	src/widgets/theme.c \
+	src/pages/icons_page.c \
+	src/pages/toolbar_page.c \
+	src/pages/inputs_page.c \
+	src/pages/buttons_page.c \
+	src/pages/toggles_page.c \
+	src/pages/displays_page.c \
+	src/pages/dialogs_page.c
 
 OBJ = $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRC))
 DEP = $(OBJ:.o=.d)

@@ -15,18 +15,7 @@
 
 #include <string.h>
 
-typedef struct {
-  GtkWidget *status_label;
-  GtkWidget *progress;
-  GtkWidget *spinner;
-  GtkWidget *switch_widget;
-  GtkWidget *icon_size_label;
-  GtkWidget *icon_preview;
-  int icon_counter;
-  bool spinner_running;
-} showcase_state;
-
-static void on_menu_about(GSimpleAction *action, GVariant *parameter,
+void on_menu_about(GSimpleAction *action, GVariant *parameter,
                           gpointer user_data) {
   (void)action;
   (void)parameter;
@@ -47,7 +36,7 @@ static void on_menu_about(GSimpleAction *action, GVariant *parameter,
   });
 }
 
-static void on_menu_quit(GSimpleAction *action, GVariant *parameter,
+void on_menu_quit(GSimpleAction *action, GVariant *parameter,
                          gpointer user_data) {
   (void)action;
   (void)parameter;
@@ -61,7 +50,7 @@ static void set_status(showcase_state *state, const char *text) {
 
 
 
-static void on_entry_changed(GtkEditable *editable, gpointer user_data) {
+void on_entry_changed(GtkEditable *editable, gpointer user_data) {
   showcase_state *state = user_data;
   char msg[96];
   g_snprintf(msg, sizeof(msg), "Input length: %zu",
@@ -69,7 +58,7 @@ static void on_entry_changed(GtkEditable *editable, gpointer user_data) {
   set_status(state, msg);
 }
 
-static void on_role_selected(GtkDropDown *dropdown, GParamSpec *pspec,
+void on_role_selected(GtkDropDown *dropdown, GParamSpec *pspec,
                              gpointer user_data) {
   (void)pspec;
   showcase_state *state = user_data;
@@ -79,7 +68,7 @@ static void on_role_selected(GtkDropDown *dropdown, GParamSpec *pspec,
   set_status(state, msg);
 }
 
-static void on_spin_value_changed(GtkSpinButton *spin, gpointer user_data) {
+void on_spin_value_changed(GtkSpinButton *spin, gpointer user_data) {
   showcase_state *state = user_data;
   char msg[96];
   g_snprintf(msg, sizeof(msg), "Spin value: %.2f",
@@ -87,18 +76,18 @@ static void on_spin_value_changed(GtkSpinButton *spin, gpointer user_data) {
   set_status(state, msg);
 }
 
-static void on_button_clicked(GtkButton *button, gpointer user_data) {
+void on_button_clicked(GtkButton *button, gpointer user_data) {
   (void)button;
   set_status((showcase_state *)user_data, "Primary action clicked");
 }
 
-static void on_checkbox_toggled(GtkCheckButton *button, gpointer user_data) {
+void on_checkbox_toggled(GtkCheckButton *button, gpointer user_data) {
   showcase_state *state = user_data;
   set_status(state, gtk_check_button_get_active(button) ? "Checkbox enabled"
                                                         : "Checkbox disabled");
 }
 
-static void on_switch_changed(GtkSwitch *sw, GParamSpec *pspec,
+void on_switch_changed(GtkSwitch *sw, GParamSpec *pspec,
                               gpointer user_data) {
   (void)pspec;
   showcase_state *state = user_data;
@@ -106,7 +95,7 @@ static void on_switch_changed(GtkSwitch *sw, GParamSpec *pspec,
              gtk_switch_get_active(sw) ? "Switch active" : "Switch inactive");
 }
 
-static void on_day_selected(GtkCalendar *calendar, gpointer user_data) {
+void on_day_selected(GtkCalendar *calendar, gpointer user_data) {
   showcase_state *state = user_data;
   GDateTime *d = gtk_calendar_get_date(calendar);
   char *s = g_date_time_format(d, "%Y-%m-%d");
@@ -117,14 +106,14 @@ static void on_day_selected(GtkCalendar *calendar, gpointer user_data) {
   g_date_time_unref(d);
 }
 
-static void on_alert_result(int response_index, gpointer user_data) {
+void on_alert_result(int response_index, gpointer user_data) {
   showcase_state *state = user_data;
   char msg[96];
   g_snprintf(msg, sizeof(msg), "Dialog response index: %d", response_index);
   set_status(state, msg);
 }
 
-static void on_show_dialog(GtkButton *button, gpointer user_data) {
+void on_show_dialog(GtkButton *button, gpointer user_data) {
   (void)button;
   showcase_state *state = user_data;
   GtkRoot *root = gtk_widget_get_root(state->status_label);
@@ -147,7 +136,7 @@ static void on_show_dialog(GtkButton *button, gpointer user_data) {
   });
 }
 
-static void on_inc_progress(GtkButton *button, gpointer user_data) {
+void on_inc_progress(GtkButton *button, gpointer user_data) {
   (void)button;
   showcase_state *state = user_data;
   double f = gtk_progress_bar_get_fraction(GTK_PROGRESS_BAR(state->progress));
@@ -161,7 +150,7 @@ static void on_inc_progress(GtkButton *button, gpointer user_data) {
   set_status(state, "Progress updated");
 }
 
-static void on_toggle_spinner(GtkButton *button, gpointer user_data) {
+void on_toggle_spinner(GtkButton *button, gpointer user_data) {
   (void)button;
   showcase_state *state = user_data;
   state->spinner_running = !state->spinner_running;
@@ -174,7 +163,7 @@ static void on_toggle_spinner(GtkButton *button, gpointer user_data) {
   }
 }
 
-static void on_icon_btn_clicked(GtkButton *button, gpointer user_data) {
+void on_icon_btn_clicked(GtkButton *button, gpointer user_data) {
   (void)button;
   showcase_state *state = user_data;
   state->icon_counter++;
@@ -183,27 +172,27 @@ static void on_icon_btn_clicked(GtkButton *button, gpointer user_data) {
   set_status(state, msg);
 }
 
-static void on_star_clicked(GtkButton *button, gpointer user_data) {
+void on_star_clicked(GtkButton *button, gpointer user_data) {
   (void)button;
   set_status((showcase_state *)user_data, "Starred!");
 }
 
-static void on_copy_clicked(GtkButton *button, gpointer user_data) {
+void on_copy_clicked(GtkButton *button, gpointer user_data) {
   (void)button;
   set_status((showcase_state *)user_data, "Copied to clipboard");
 }
 
-static void on_search_clicked(GtkButton *button, gpointer user_data) {
+void on_search_clicked(GtkButton *button, gpointer user_data) {
   (void)button;
   set_status((showcase_state *)user_data, "Search activated");
 }
 
-static void on_home_clicked(GtkButton *button, gpointer user_data) {
+void on_home_clicked(GtkButton *button, gpointer user_data) {
   (void)button;
   set_status((showcase_state *)user_data, "Navigated home");
 }
 
-static void on_zoom_in(GtkButton *button, gpointer user_data) {
+void on_zoom_in(GtkButton *button, gpointer user_data) {
   (void)button;
   showcase_state *state = user_data;
   int size = gtk_image_get_pixel_size(GTK_IMAGE(state->icon_preview));
@@ -217,7 +206,7 @@ static void on_zoom_in(GtkButton *button, gpointer user_data) {
   set_status(state, "Zoomed in");
 }
 
-static void on_zoom_out(GtkButton *button, gpointer user_data) {
+void on_zoom_out(GtkButton *button, gpointer user_data) {
   (void)button;
   showcase_state *state = user_data;
   int size = gtk_image_get_pixel_size(GTK_IMAGE(state->icon_preview));
@@ -231,7 +220,7 @@ static void on_zoom_out(GtkButton *button, gpointer user_data) {
   set_status(state, "Zoomed out");
 }
 
-static void on_icon_selected(GtkDropDown *dropdown, GParamSpec *pspec,
+void on_icon_selected(GtkDropDown *dropdown, GParamSpec *pspec,
                              gpointer user_data) {
   (void)pspec;
   showcase_state *state = user_data;
