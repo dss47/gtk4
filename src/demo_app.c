@@ -216,18 +216,18 @@ static GtkWidget *make_inputs_page(showcase_state *state) {
       .user_data = state,
   });
 
-  gtk_grid_attach(GTK_GRID(grid), label_user, 0, 0, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid), entry_user, 1, 0, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid), label_pass, 0, 1, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid), entry_pass, 1, 1, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid),
+  grid_add(grid, label_user, 0, 0, 1, 1);
+  grid_add(grid, entry_user, 1, 0, 1, 1);
+  grid_add(grid, label_pass, 0, 1, 1, 1);
+  grid_add(grid, entry_pass, 1, 1, 1, 1);
+  grid_add(grid,
                   create_label(&(label_config){.text = "Role", .style = {0}}),
                   0, 2, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid), dropdown, 1, 2, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid),
+  grid_add(grid, dropdown, 1, 2, 1, 1);
+  grid_add(grid,
                   create_label(&(label_config){.text = "Score", .style = {0}}),
                   0, 3, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid), spin, 1, 3, 1, 1);
+  grid_add(grid, spin, 1, 3, 1, 1);
   return grid;
 }
 

@@ -1,5 +1,11 @@
 #include "widgets/container.h"
 
+
+void *grid_add(GtkWidget *grid, GtkWidget *child, int a, int b, int c, int d)
+{
+    gtk_grid_attach(GTK_GRID(grid), child, a, b, c, d);
+}
+
 GtkWidget *create_grid(const grid_config *config) {
     GtkWidget *grid = gtk_grid_new();
     if (config == NULL) {
