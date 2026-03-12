@@ -1,51 +1,33 @@
 CC = gcc
-PKG_CONFIG_CFLAGS := $(shell pkg-config --cflags gtk4)
-PKG_CONFIG_LIBS := $(shell pkg-config --libs gtk4)
-CFLAGS = $(PKG_CONFIG_CFLAGS) -Iinclude -I. -MMD -MP -O2
-DEBUG_FLAGS = -g
-LIBS = $(PKG_CONFIG_LIBS)
-MAKEFLAGS += -j$(shell nproc)
+CFLAGS = $(shell pkg-config --cflags gtk4) -Iinclude -MMD -MP -O2
+LIBS = $(shell pkg-config --libs gtk4) -lsqlite3
 
 BUILD_DIR = build
-TARGET = $(BUILD_DIR)/gtk-app
-SRC = main.c src/demo_app.c \
-	src/widgets/common.c \
-	src/widgets/window.c \
-	src/widgets/container.c \
-	src/widgets/button.c \
-	src/widgets/input.c \
-	src/widgets/toggle.c \
-	src/widgets/display.c \
-	src/widgets/date.c \
-	src/widgets/separator.c \
-	src/widgets/dialog.c \
-	src/widgets/menu.c \
-	src/widgets/theme.c
+SRC_DIR = src
+TARGET = $(BUILD_DIR)/nippon-app
 
-OBJ = $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRC))
+# On cherche spécifiquement dans le dossier src/
+SRC = $(wildcard $(SRC_DIR)/*.c)
+# On transforme src/fichier.c en build/fichier.o
+OBJ = $(SRC:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 DEP = $(OBJ:.o=.d)
 
 all: $(TARGET)
 
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
-
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) $(LIBS)
+	@mkdir -p $(BUILD_DIR)
+	$(CC) -o $@ $(OBJ) $(LIBS)
 
-$(BUILD_DIR)/%.o: %.c
-	mkdir -p $(dir $@)
+# Règle pour compiler les fichiers de src/ vers build/
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
-
-debug: CFLAGS += $(DEBUG_FLAGS)
-debug: clean all
 
 clean:
 	rm -rf $(BUILD_DIR)
 
-run: $(TARGET)
-	$(TARGET)
+run: all
+	./$(TARGET)
 
-.PHONY: all clean debug run
-
+.PHONY: all clean run
 -include $(DEP)
