@@ -7,8 +7,34 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="true"/>
       <xs:enumeration value="false"/>
-      <xs:enumeration value="1"/>
-      <xs:enumeration value="0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="themeVariantType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="primary"/>
+      <xs:enumeration value="success"/>
+      <xs:enumeration value="danger"/>
+      <xs:enumeration value="warning"/>
+      <xs:enumeration value="flat"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="purposeHintType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="email"/>
+      <xs:enumeration value="number"/>
+      <xs:enumeration value="phone"/>
+      <xs:enumeration value="url"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ellipsizeType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="none"/>
+      <xs:enumeration value="start"/>
+      <xs:enumeration value="middle"/>
+      <xs:enumeration value="end"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -36,6 +62,125 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <xs:simpleType name="headerbarPackType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="start"/>
+      <xs:enumeration value="end"/>
+      <xs:enumeration value="title"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="cssClassKnownType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="btn-primary"/>
+      <xs:enumeration value="btn-success"/>
+      <xs:enumeration value="btn-danger"/>
+      <xs:enumeration value="vscode-window"/>
+      <xs:enumeration value="vscode-headerbar"/>
+      <xs:enumeration value="vscode-menubar"/>
+      <xs:enumeration value="vscode-main"/>
+      <xs:enumeration value="vscode-sidebar"/>
+      <xs:enumeration value="vscode-editor-shell"/>
+      <xs:enumeration value="vscode-tabstrip"/>
+      <xs:enumeration value="vscode-tab-title"/>
+      <xs:enumeration value="vscode-editor"/>
+      <xs:enumeration value="vscode-statusbar"/>
+      <xs:enumeration value="title-1"/>
+      <xs:enumeration value="title-2"/>
+      <xs:enumeration value="dim-label"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="cssClassType">
+    <xs:union memberTypes="cssClassKnownType xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="iconNameKnownType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="applications-development-symbolic"/>
+      <xs:enumeration value="applications-system-symbolic"/>
+      <xs:enumeration value="applications-multimedia-symbolic"/>
+      <xs:enumeration value="folder-pictures-symbolic"/>
+      <xs:enumeration value="dialog-information-symbolic"/>
+      <xs:enumeration value="dialog-warning-symbolic"/>
+      <xs:enumeration value="dialog-error-symbolic"/>
+      <xs:enumeration value="document-new-symbolic"/>
+      <xs:enumeration value="document-open-symbolic"/>
+      <xs:enumeration value="document-save-symbolic"/>
+      <xs:enumeration value="go-next-symbolic"/>
+      <xs:enumeration value="go-previous-symbolic"/>
+      <xs:enumeration value="go-home-symbolic"/>
+      <xs:enumeration value="media-playback-start-symbolic"/>
+      <xs:enumeration value="system-search-symbolic"/>
+      <xs:enumeration value="system-run-symbolic"/>
+      <xs:enumeration value="view-refresh-symbolic"/>
+      <xs:enumeration value="zoom-in-symbolic"/>
+      <xs:enumeration value="zoom-out-symbolic"/>
+      <xs:enumeration value="edit-copy-symbolic"/>
+      <xs:enumeration value="starred-symbolic"/>
+      <xs:enumeration value="emblem-ok-symbolic"/>
+      <xs:enumeration value="emblem-favorite-symbolic"/>
+      <xs:enumeration value="face-smile-symbolic"/>
+      <xs:enumeration value="user-trash-symbolic"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="iconNameType">
+    <xs:union memberTypes="iconNameKnownType xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="callbackNameKnownType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="on_menu_about"/>
+      <xs:enumeration value="on_menu_quit"/>
+      <xs:enumeration value="on_entry_changed"/>
+      <xs:enumeration value="on_role_selected"/>
+      <xs:enumeration value="on_spin_value_changed"/>
+      <xs:enumeration value="on_button_clicked"/>
+      <xs:enumeration value="on_checkbox_toggled"/>
+      <xs:enumeration value="on_switch_changed"/>
+      <xs:enumeration value="on_day_selected"/>
+      <xs:enumeration value="on_show_dialog"/>
+      <xs:enumeration value="on_inc_progress"/>
+      <xs:enumeration value="on_toggle_spinner"/>
+      <xs:enumeration value="on_icon_btn_clicked"/>
+      <xs:enumeration value="on_star_clicked"/>
+      <xs:enumeration value="on_copy_clicked"/>
+      <xs:enumeration value="on_search_clicked"/>
+      <xs:enumeration value="on_home_clicked"/>
+      <xs:enumeration value="on_zoom_in"/>
+      <xs:enumeration value="on_zoom_out"/>
+      <xs:enumeration value="on_icon_selected"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="callbackNameType">
+    <xs:union memberTypes="callbackNameKnownType xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="colorKeywordType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="transparent"/>
+      <xs:enumeration value="black"/>
+      <xs:enumeration value="white"/>
+      <xs:enumeration value="red"/>
+      <xs:enumeration value="green"/>
+      <xs:enumeration value="blue"/>
+      <xs:enumeration value="gray"/>
+      <xs:enumeration value="currentColor"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="hexColorType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?([0-9a-fA-F]{2})?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="colorType">
+    <xs:union memberTypes="hexColorType colorKeywordType xs:string"/>
+  </xs:simpleType>
+
   <xs:attributeGroup name="commonStyleAttrs">
     <xs:attribute name="style-margin-top" type="xs:integer"/>
     <xs:attribute name="style-margin-bottom" type="xs:integer"/>
@@ -47,7 +192,9 @@
     <xs:attribute name="style-valign" type="alignType"/>
     <xs:attribute name="style-hexpand" type="boolLike"/>
     <xs:attribute name="style-vexpand" type="boolLike"/>
-    <xs:attribute name="style-css-class" type="xs:string"/>
+    <xs:attribute name="style-sensitive" type="boolLike"/>
+    <xs:attribute name="style-visible" type="boolLike"/>
+    <xs:attribute name="style-css-class" type="cssClassType"/>
     <xs:attribute name="tooltip" type="xs:string"/>
   </xs:attributeGroup>
 
@@ -60,6 +207,7 @@
 
   <xs:attributeGroup name="globalWidgetAttrs">
     <xs:attribute name="id" type="xs:string"/>
+    <xs:attribute name="headerbar-pack" type="headerbarPackType"/>
     <xs:attributeGroup ref="commonStyleAttrs"/>
     <xs:attributeGroup ref="layoutAttrs"/>
   </xs:attributeGroup>
@@ -68,11 +216,13 @@
     <xs:choice>
       <xs:element ref="box"/>
       <xs:element ref="grid"/>
+      <xs:element ref="headerbar"/>
       <xs:element ref="menubar"/>
       <xs:element ref="stack"/>
       <xs:element ref="stack-sidebar"/>
       <xs:element ref="button"/>
       <xs:element ref="entry"/>
+      <xs:element ref="text-view"/>
       <xs:element ref="spin-button"/>
       <xs:element ref="dropdown"/>
       <xs:element ref="calendar"/>
@@ -91,8 +241,8 @@
     <xs:sequence>
       <xs:group ref="widgetChildren" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
-    <xs:attribute name="title" type="xs:string"/>
-    <xs:attribute name="icon-name" type="xs:string"/>
+    <xs:attribute name="use-headerbar" type="boolLike"/>
+    <xs:attribute name="icon-name" type="iconNameType"/>
     <xs:attribute name="widget-name" type="xs:string"/>
     <xs:attribute name="background-image" type="xs:string"/>
     <xs:attribute name="default-width" type="xs:integer"/>
@@ -102,6 +252,7 @@
     <xs:attribute name="max-width" type="xs:integer"/>
     <xs:attribute name="max-height" type="xs:integer"/>
     <xs:attribute name="resizable" type="boolLike"/>
+    <xs:attribute name="resizeable" type="boolLike"/>
     <xs:attribute name="decorated" type="boolLike"/>
     <xs:attribute name="modal" type="boolLike"/>
     <xs:attribute name="maximized" type="boolLike"/>
@@ -120,6 +271,23 @@
   </xs:complexType>
 
   <xs:element name="window" type="windowType"/>
+
+  <xs:element name="headerbar">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:group ref="widgetChildren" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="height" type="xs:integer" default="42"/>
+      <xs:attribute name="title" type="xs:string"/>
+      <xs:attribute name="subtitle" type="xs:string"/>
+      <xs:attribute name="background-color" type="colorType"/>
+      <xs:attribute name="show-title-buttons" type="boolLike"/>
+      <xs:attribute name="show-close-button" type="boolLike"/>
+      <xs:attribute name="show-minimize-button" type="boolLike"/>
+      <xs:attribute name="show-maximize-button" type="boolLike"/>
+      <xs:attributeGroup ref="globalWidgetAttrs"/>
+    </xs:complexType>
+  </xs:element>
 
   <xs:element name="box">
     <xs:complexType>
@@ -209,7 +377,7 @@
       </xs:sequence>
       <xs:attribute name="label" type="xs:string" use="required"/>
       <xs:attribute name="enabled" type="boolLike"/>
-      <xs:attribute name="on-activate" type="xs:string"/>
+      <xs:attribute name="on-activate" type="callbackNameType"/>
     </xs:complexType>
   </xs:element>
 
@@ -218,13 +386,13 @@
       <xs:complexContent>
         <xs:extension base="leafType">
           <xs:attribute name="label" type="xs:string"/>
-          <xs:attribute name="icon-name" type="xs:string"/>
-          <xs:attribute name="theme-variant" type="xs:string"/>
+          <xs:attribute name="icon-name" type="iconNameType"/>
+          <xs:attribute name="theme-variant" type="themeVariantType"/>
           <xs:attribute name="use-underline" type="boolLike"/>
           <xs:attribute name="has-frame" type="boolLike"/>
           <xs:attribute name="can-shrink" type="boolLike"/>
           <xs:attribute name="icon-size" type="xs:integer"/>
-          <xs:attribute name="on-clicked" type="xs:string"/>
+          <xs:attribute name="on-clicked" type="callbackNameType"/>
         </xs:extension>
       </xs:complexContent>
     </xs:complexType>
@@ -236,11 +404,24 @@
         <xs:extension base="leafType">
           <xs:attribute name="placeholder" type="xs:string"/>
           <xs:attribute name="default-text" type="xs:string"/>
-          <xs:attribute name="purpose-hint" type="xs:string"/>
+          <xs:attribute name="purpose-hint" type="purposeHintType"/>
           <xs:attribute name="password" type="boolLike"/>
           <xs:attribute name="editable" type="boolLike"/>
           <xs:attribute name="max-length" type="xs:integer"/>
-          <xs:attribute name="on-changed" type="xs:string"/>
+          <xs:attribute name="on-changed" type="callbackNameType"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="text-view">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="leafType">
+          <xs:attribute name="default-text" type="xs:string"/>
+          <xs:attribute name="editable" type="boolLike"/>
+          <xs:attribute name="monospace" type="boolLike"/>
+          <xs:attribute name="wrap" type="boolLike"/>
         </xs:extension>
       </xs:complexContent>
     </xs:complexType>
@@ -257,7 +438,7 @@
           <xs:attribute name="digits" type="xs:integer"/>
           <xs:attribute name="numeric-only" type="boolLike"/>
           <xs:attribute name="wrap" type="boolLike"/>
-          <xs:attribute name="on-value-changed" type="xs:string"/>
+          <xs:attribute name="on-value-changed" type="callbackNameType"/>
         </xs:extension>
       </xs:complexContent>
     </xs:complexType>
@@ -270,7 +451,7 @@
           <xs:attribute name="options" type="xs:string"/>
           <xs:attribute name="selected-index" type="xs:integer"/>
           <xs:attribute name="enable-search" type="boolLike"/>
-          <xs:attribute name="on-selected" type="xs:string"/>
+          <xs:attribute name="on-selected" type="callbackNameType"/>
         </xs:extension>
       </xs:complexContent>
     </xs:complexType>
@@ -283,7 +464,7 @@
           <xs:attribute name="show-day-names" type="boolLike"/>
           <xs:attribute name="show-week-numbers" type="boolLike"/>
           <xs:attribute name="no-month-change" type="boolLike"/>
-          <xs:attribute name="on-day-selected" type="xs:string"/>
+          <xs:attribute name="on-day-selected" type="callbackNameType"/>
         </xs:extension>
       </xs:complexContent>
     </xs:complexType>
@@ -297,7 +478,7 @@
           <xs:attribute name="selectable" type="boolLike"/>
           <xs:attribute name="wrap" type="boolLike"/>
           <xs:attribute name="max-width-chars" type="xs:integer"/>
-          <xs:attribute name="ellipsize" type="xs:string"/>
+          <xs:attribute name="ellipsize" type="ellipsizeType"/>
         </xs:extension>
       </xs:complexContent>
     </xs:complexType>
@@ -307,7 +488,7 @@
     <xs:complexType>
       <xs:complexContent>
         <xs:extension base="leafType">
-          <xs:attribute name="icon-name" type="xs:string"/>
+          <xs:attribute name="icon-name" type="iconNameType"/>
           <xs:attribute name="file-path" type="xs:string"/>
           <xs:attribute name="pixel-size" type="xs:integer"/>
           <xs:attribute name="keep-aspect" type="boolLike"/>
@@ -357,7 +538,7 @@
           <xs:attribute name="label" type="xs:string"/>
           <xs:attribute name="active" type="boolLike"/>
           <xs:attribute name="inconsistent" type="boolLike"/>
-          <xs:attribute name="on-toggled" type="xs:string"/>
+          <xs:attribute name="on-toggled" type="callbackNameType"/>
         </xs:extension>
       </xs:complexContent>
     </xs:complexType>
@@ -370,7 +551,7 @@
           <xs:attribute name="label" type="xs:string"/>
           <xs:attribute name="active" type="boolLike"/>
           <xs:attribute name="state" type="boolLike"/>
-          <xs:attribute name="on-active-changed" type="xs:string"/>
+          <xs:attribute name="on-active-changed" type="callbackNameType"/>
         </xs:extension>
       </xs:complexContent>
     </xs:complexType>
@@ -383,7 +564,7 @@
           <xs:attribute name="label" type="xs:string"/>
           <xs:attribute name="group-with" type="xs:string"/>
           <xs:attribute name="is-active" type="boolLike"/>
-          <xs:attribute name="on-toggled" type="xs:string"/>
+          <xs:attribute name="on-toggled" type="callbackNameType"/>
         </xs:extension>
       </xs:complexContent>
     </xs:complexType>

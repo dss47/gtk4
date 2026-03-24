@@ -52,8 +52,17 @@ typedef struct {
     gpointer user_data;
 } spin_button_config;
 
+typedef struct {
+    const char *default_text;
+    bool editable;
+    bool monospace;
+    bool wrap;
+    widget_style_config style;
+} text_view_config;
+
 GtkWidget *create_entry(const entry_config *config);
 GtkWidget *create_dropdown(const dropdown_config *config);
 GtkWidget *create_spin_button(const spin_button_config *config);
+GtkWidget *create_text_view(const text_view_config *config);
 
 #endif

@@ -20,6 +20,10 @@
 
 typedef struct {
   const char *title;
+  const char *headerbar_title;
+  const char *headerbar_subtitle;
+  const char *headerbar_background_color;
+  int headerbar_height;
   const char *icon_name;
   const char *widget_name;
   const char *background_color;
@@ -33,6 +37,11 @@ typedef struct {
   bool resizable;
   bool decorated;
   bool modal;
+  bool use_headerbar;
+  bool headerbar_show_title_buttons;
+  bool headerbar_show_close_button;
+  bool headerbar_show_minimize_button;
+  bool headerbar_show_maximize_button;
   bool maximized;
   bool present_on_create;
   widget_style_config style;

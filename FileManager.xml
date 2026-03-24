@@ -1,0 +1,58 @@
+<window xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="schemas/ui-wrapper.xsd" 
+       use-headerbar="false"
+        id="main_window"
+        icon-name="applications-development-symbolic"
+        widget-name="wrapper-window"
+        default-width="1000"
+        default-height="600"
+        min-width="500"
+        min-height="300"
+        resizable="true"
+        modal="false"
+        maximized="false"
+        style-css-class="main_window">
+
+       <button 
+               label="Click me"
+               icon-name="applications-development-symbolic"
+               theme-variant="primary"
+               use-underline="false"
+               has-frame="true"
+               can-shrink="false"
+               icon-size="0"
+               on-clicked="on_button_clicked"
+               headerbar-pack="end"
+               layout-col="0"
+               layout-row="0" />
+
+       <box orientation="vertical"
+            spacing="8"
+            
+            homogeneous="false"
+            align="fill"
+            style-hexpand="false"
+            style-vexpand="false">
+              <box orientation="horizontal"
+                   spacing="50"
+                   homogeneous="false"
+                   align="fill"
+                   style-hexpand="false"
+                   style-vexpand="false">
+                     <image icon-name="system-search"
+                            pixel-size="25"
+                            keep-aspect="true" />
+
+                     <label text="Files"
+                            selectable="false"
+                            wrap="false"
+                            max-width-chars="-1" />
+
+                     <image icon-name="system-search"
+                            pixel-size="25"
+                            keep-aspect="true" />
+              </box>
+       </box>
+
+
+</window>

@@ -1,6 +1,6 @@
 <window xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="schemas/ui-wrapper.xsd"
-        title="XML Demo - Forms"
+       use-headerbar="true"
         icon-name="applications-development-symbolic"
         widget-name="wrapper-window"
         default-width="760"
@@ -8,7 +8,10 @@
         min-width="520"
         min-height="360"
         resizable="true"
-        decorated="true">
+        >
+
+  <headerbar title="XML Demo - Forms"
+                 show-title-buttons="true" />
 
   <box orientation="vertical"
        spacing="10"

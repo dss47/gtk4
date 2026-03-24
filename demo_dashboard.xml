@@ -1,6 +1,6 @@
 <window xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="schemas/ui-wrapper.xsd"
-        title="XML Demo - Dashboard"
+        use-headerbar="true"
         icon-name="applications-system-symbolic"
         widget-name="wrapper-window"
         default-width="900"
@@ -8,8 +8,10 @@
         min-width="600"
         min-height="400"
         resizable="true"
-        decorated="true"
         background-image="image.png">
+
+        <headerbar title="XML Demo - Dashboard"
+             show-title-buttons="true" />
 
   <box orientation="vertical"
        spacing="12"

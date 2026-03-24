@@ -1,0 +1,212 @@
+<window use-headerbar=""
+        icon-name="applications-development-symbolic"
+        widget-name="wrapper-window"
+        style-css-class="vscode-window"
+        default-width="1100"
+        default-height="720"
+        min-width="860"
+        min-height="520"
+        resizable="true"
+        modal="false"
+        maximized="false">
+
+    <headerbar height="37"
+               title="Visual Studio Code"
+               background-color="#1f1f1f"
+               show-title-buttons="true"
+               style-css-class="vscode-headerbar">
+        <image icon-name="applications-development-symbolic"
+               pixel-size="16"
+               headerbar-pack="start" />
+    </headerbar>
+
+    <box orientation="vertical"
+         spacing="0"
+         style-css-class="vscode-workbench"
+         style-hexpand=""
+         style-vexpand="false">
+
+        <menubar layout="horizontal"
+                 show-arrow-indicators="true"
+                 style-css-class="vscode-menubar">
+            <menu-section label="File">
+                <menu-item label="New File"
+                           enabled="true"
+                           on-activate="on_menu_about" />
+                <menu-item label="Open Folder"
+                           enabled="true"
+                           on-activate="on_menu_about" />
+                <menu-item label="Save"
+                           enabled="true"
+                           on-activate="on_menu_about" />
+            </menu-section>
+            <menu-section label="Edit">
+                <menu-item label="Undo"
+                           enabled="true"
+                           on-activate="on_menu_about" />
+                <menu-item label="Redo"
+                           enabled="true"
+                           on-activate="on_menu_about" />
+            </menu-section>
+            <menu-section label="View">
+                <menu-item label="Command Palette"
+                           enabled="true"
+                           on-activate="on_menu_about" />
+            </menu-section>
+            <menu-section label="Terminal">
+                <menu-item label="New Terminal"
+                           enabled="true"
+                           on-activate="on_menu_about" />
+            </menu-section>
+            <menu-section label="Help">
+                <menu-item label="About"
+                           enabled="true"
+                           on-activate="on_menu_about" />
+                <menu-item label="Quit"
+                           enabled="true"
+                           on-activate="on_menu_quit" />
+            </menu-section>
+        </menubar>
+
+        <grid column-spacing="0"
+              row-spacing="0"
+              style-css-class="vscode-main"
+              style-hexpand="true"
+              style-vexpand="true">
+
+            <stack id="workbench_stack"
+                   transition="crossfade"
+                   duration-ms="130"
+                   style-hexpand="true"
+                   style-vexpand="true"
+                   layout-col="1"
+                   layout-row="0">
+                   b
+
+                <stack-page name="explorer"
+                            title="Explorer">
+                    <box orientation="vertical"
+                         spacing="0"
+                         style-css-class="vscode-editor-shell"
+                         style-hexpand="true"
+                         style-vexpand="true">
+                        <box orientation="horizontal"
+                             spacing="8"
+                             style-css-class="vscode-tabstrip"
+                             style-margin-top="8"
+                             style-margin-bottom="8"
+                             style-margin-start="10"
+                             style-margin-end="10">
+                            <label text="main.c  *"
+                                   style-css-class="vscode-tab-title" />
+                            <button label="+"
+                                    has-frame="false"
+                                    on-clicked="on_button_clicked" />
+                        </box>
+
+                        <separator orientation="horizontal" />
+
+                        <text-view default-text="Type code here..."
+                                   editable="true"
+                                   monospace="true"
+                                   wrap="false"
+                                   style-css-class="vscode-editor"
+                                   style-hexpand="true"
+                                   style-vexpand="true"
+                                   style-margin-top="12"
+                                   style-margin-bottom="12"
+                                   style-margin-start="12"
+                                   style-margin-end="12" />
+
+                        <separator orientation="horizontal" />
+
+                        <box orientation="horizontal"
+                             spacing="14"
+                             style-css-class="vscode-statusbar"
+                             style-margin-top="6"
+                             style-margin-bottom="6"
+                             style-margin-start="10"
+                             style-margin-end="10">
+                            <label text="main.c" />
+                            <label text="UTF-8" />
+                            <label text="LF" />
+                            <label text="C" />
+                            <label id="status_label"
+                                   text="Ln 9, Col 1" />
+                        </box>
+                    </box>
+                </stack-page>
+
+                <stack-page name="search"
+                            title="Search">
+                    <box orientation="vertical"
+                         spacing="10"
+                         style-margin-top="16"
+                         style-margin-start="16"
+                         style-margin-end="16">
+                        <label text="Search in workspace"
+                               style-css-class="title-2" />
+                        <entry placeholder="Type search term..."
+                               on-changed="on_entry_changed" />
+                    </box>
+                </stack-page>
+
+                <stack-page name="source"
+                            title="Source">
+                    <box orientation="vertical"
+                         spacing="10"
+                         style-margin-top="16"
+                         style-margin-start="16"
+                         style-margin-end="16">
+                        <label text="Source Control"
+                               style-css-class="title-2" />
+                        <label text="No pending changes" />
+                    </box>
+                </stack-page>
+
+                <stack-page name="run"
+                            title="Run">
+                    <box orientation="vertical"
+                         spacing="10"
+                         style-margin-top="16"
+                         style-margin-start="16"
+                         style-margin-end="16">
+                        <label text="Run and Debug"
+                               style-css-class="title-2" />
+                        <button label="Start Debugging"
+                                theme-variant="primary"
+                                on-clicked="on_button_clicked" />
+                    </box>
+                </stack-page>
+
+                <stack-page name="extensions"
+                            title="Extensions">
+                    <box orientation="vertical"
+                         spacing="10"
+                         style-margin-top="16"
+                         style-margin-start="16"
+                         style-margin-end="16">
+                        <label text="Extensions"
+                               style-css-class="title-2" />
+                        <entry placeholder="Search extensions..."
+                               on-changed="on_entry_changed" />
+                    </box>
+                </stack-page>
+
+            </stack>
+            b
+
+            <stack-sidebar stack-id="workbench_stack"
+                           layout-col="0"
+                           layout-row="0"
+                           style-css-class="vscode-sidebar"
+                           style-margin-top="10"
+                           style-margin-bottom="10"
+                           style-margin-start="8"
+                           style-margin-end="8"
+                            />
+
+        </grid>
+    </box>
+
+</window>

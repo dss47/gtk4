@@ -7,7 +7,6 @@
                 "/usr/include/gtk-4.0",
                 "/usr/include/pango-1.0",
                 "/usr/include/glib-2.0",
-                "/usr/lib/x86_64-linux-gnu/glib-2.0/include",
                 "/usr/include/harfbuzz",
                 "/usr/include/freetype2",
                 "/usr/include/libpng16",
@@ -20,6 +19,7 @@
                 "/usr/include/x86_64-linux-gnu",
                 "/usr/include/webp",
                 "/usr/include/graphene-1.0",
+                "/usr/lib/x86_64-linux-gnu/glib-2.0/include",
                 "/usr/lib/x86_64-linux-gnu/graphene-1.0/include"
             ],
             "defines": [],
@@ -27,6 +27,7 @@
             "cStandard": "c17",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-gcc-x64",
+            "mergeConfigurations": true,
             "configurationProvider": "ms-vscode.makefile-tools"
         }
     ],

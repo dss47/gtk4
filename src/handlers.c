@@ -45,7 +45,11 @@ void on_menu_quit(GSimpleAction *action, GVariant *parameter,
 
 
 static void set_status(showcase_state *state, const char *text) {
-  gtk_label_set_text(GTK_LABEL(state->status_label), text);
+  if (state == NULL || state->status_label == NULL ||
+      !GTK_IS_LABEL(state->status_label)) {
+    return;
+  }
+  gtk_label_set_text(GTK_LABEL(state->status_label), text ? text : "");
 }
 
 
@@ -195,6 +199,10 @@ void on_home_clicked(GtkButton *button, gpointer user_data) {
 void on_zoom_in(GtkButton *button, gpointer user_data) {
   (void)button;
   showcase_state *state = user_data;
+  if (state == NULL || state->icon_preview == NULL ||
+      !GTK_IS_IMAGE(state->icon_preview)) {
+    return;
+  }
   int size = gtk_image_get_pixel_size(GTK_IMAGE(state->icon_preview));
   if (size < 128) {
     size += 8;
@@ -202,13 +210,19 @@ void on_zoom_in(GtkButton *button, gpointer user_data) {
   }
   char msg[64];
   g_snprintf(msg, sizeof(msg), "%d px", size);
-  gtk_label_set_text(GTK_LABEL(state->icon_size_label), msg);
+  if (state->icon_size_label && GTK_IS_LABEL(state->icon_size_label)) {
+    gtk_label_set_text(GTK_LABEL(state->icon_size_label), msg);
+  }
   set_status(state, "Zoomed in");
 }
 
 void on_zoom_out(GtkButton *button, gpointer user_data) {
   (void)button;
   showcase_state *state = user_data;
+  if (state == NULL || state->icon_preview == NULL ||
+      !GTK_IS_IMAGE(state->icon_preview)) {
+    return;
+  }
   int size = gtk_image_get_pixel_size(GTK_IMAGE(state->icon_preview));
   if (size > 16) {
     size -= 8;
@@ -216,7 +230,9 @@ void on_zoom_out(GtkButton *button, gpointer user_data) {
   }
   char msg[64];
   g_snprintf(msg, sizeof(msg), "%d px", size);
-  gtk_label_set_text(GTK_LABEL(state->icon_size_label), msg);
+  if (state->icon_size_label && GTK_IS_LABEL(state->icon_size_label)) {
+    gtk_label_set_text(GTK_LABEL(state->icon_size_label), msg);
+  }
   set_status(state, "Zoomed out");
 }
 

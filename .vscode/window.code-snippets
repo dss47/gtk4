@@ -1,35 +1,440 @@
 {
-	
-	"UI Window Wrapper": {
+  "GTK Window": {
     "scope": "xml",
-    "prefix": "win",
+    "prefix": "gtkwindow",
     "body": [
-      "<window xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"",
-      "        xsi:noNamespaceSchemaLocation=\"schemas/ui-wrapper.xsd\"  title=\"${1:Window Title}\" width=\"${2:800}\" height=\"${3:600}\" resizable=\"true\" draggable=\"true\" closeable=\"true\" minimizable=\"true\" maximizable=\"true\">",
-      "    $0",
+      "<window use-headerbar=\"${1|true,false|}\"",
+      "       id=\"${2:main_window}\"",
+      "       icon-name=\"${3:applications-development-symbolic}\"",
+      "       widget-name=\"${4:wrapper-window}\"",
+      "       default-width=\"${5:800}\"",
+      "       default-height=\"${6:600}\"",
+      "       min-width=\"${7:400}\"",
+      "       min-height=\"${8:300}\"",
+      "       resizable=\"${9|true,false|}\"",
+      "       modal=\"${10|false,true|}\"",
+      "       maximized=\"${11|false,true|}\"",
+      "       style-css-class=\"${12:}\"",
+      "       >",
+      "  $0",
       "</window>"
     ],
-    "description": "Generates the root window element for the UI wrapper"
-  }
-  ,"GTK Window Wrapper": {
-    "prefix": "gtkwin",
+    "description": "Root app shell. Use once as top-level container. Includes full window attrs; define headerbar options only inside a child <headerbar> element."
+  },
+  "GTK Headerbar": {
+    "scope": "xml",
+    "prefix": "gtkheaderbar",
     "body": [
-      "<window xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"",
-      "       xsi:noNamespaceSchemaLocation=\"schemas/ui-wrapper.xsd\"",
-      "       title=\"${1:Window Title}\"",
-      "        icon-name=\"${2:applications-development-symbolic}\"",
-      "        widget-name=\"${3:wrapper-window}\"",
-      "        background-image=\"${4:image1.png}\"",
-      "        default-width=\"${5:700}\"",
-      "        default-height=\"${6:300}\"",
-      "        min-width=\"${7:400}\"",
-      "        min-height=\"${8:300}\"",
-      "        resizable=\"${9|true,false|}\"",
-      "        decorated=\"${10|true,false|}\"",
-      "        >",
-      "\t$0",
-      "</window>"
+      "<headerbar id=\"${1:main_headerbar}\"",
+      "           height=\"${2:42}\"",
+      "           title=\"${3:Header Title}\"",
+      "           subtitle=\"${4:Header Subtitle}\"",
+      "           background-color=\"${5:#1f1f1f}\"",
+      "           show-title-buttons=\"${6|true,false|}\"",
+      "           show-close-button=\"${7|true,false|}\"",
+      "           show-minimize-button=\"${8|true,false|}\"",
+      "           show-maximize-button=\"${9|true,false|}\"",
+      "           style-css-class=\"${10:}\"",
+      "           >",
+      "  $0",
+      "</headerbar>"
     ],
-    "description": "Generate a GTK UI Wrapper Window with defaults"
+    "description": "Custom title bar area. Includes all headerbar attributes (plus common id/style)."
+  },
+  "GTK Box": {
+    "scope": "xml",
+    "prefix": "gtkbox",
+    "body": [
+      "<box orientation=\"${1|vertical,horizontal|}\"",
+      "     spacing=\"${2:8}\"",
+      "     homogeneous=\"${3|false,true|}\"",
+      "     align=\"${4|fill,start,center,end|}\"",
+      "     style-hexpand=\"${5|false,true|}\"",
+      "     style-vexpand=\"${6|false,true|}\"",
+      "     >",
+      "  $0",
+      "</box>"
+    ],
+    "description": "Linear layout container. Use for row/column UIs. Key attrs: orientation, spacing, homogeneous, style-hexpand/style-vexpand."
+  },
+  "GTK Box (Fill Content)": {
+    "scope": "xml",
+    "prefix": "gtkboxfill",
+    "body": [
+      "<box orientation=\"${1|vertical,horizontal|}\"",
+      "     spacing=\"${2:8}\"",
+      "     homogeneous=\"${3|false,true|}\"",
+      "     align=\"${4|fill,start,center,end|}\"",
+      "     style-hexpand=\"${5|true,false|}\"",
+      "     style-vexpand=\"${6|true,false|}\"",
+      "     >",
+      "  $0",
+      "</box>"
+    ],
+    "description": "Content-area box preset. Defaults to style-hexpand=true and style-vexpand=true so main page layouts naturally fill available space."
+  },
+  "GTK Grid": {
+    "scope": "xml",
+    "prefix": "gtkgrid",
+    "body": [
+      "<grid id=\"${1:main_grid}\"",
+      "      column-spacing=\"${2:12}\"",
+      "      row-spacing=\"${3:12}\"",
+      "      homogeneous-columns=\"${4|false,true|}\"",
+      "      homogeneous-rows=\"${5|false,true|}\"",
+      "      style-hexpand=\"${6|false,true|}\"",
+      "      style-vexpand=\"${7|false,true|}\"",
+      "      >",
+      "  $0",
+      "</grid>"
+    ],
+    "description": "2D layout container. Use when placing widgets by row/column. Key attrs: row-spacing, column-spacing, homogeneous-rows/columns."
+  },
+  "GTK Grid (Fill Content)": {
+    "scope": "xml",
+    "prefix": "gtkgridfill",
+    "body": [
+      "<grid id=\"${1:main_grid}\"",
+      "      column-spacing=\"${2:12}\"",
+      "      row-spacing=\"${3:12}\"",
+      "      homogeneous-columns=\"${4|false,true|}\"",
+      "      homogeneous-rows=\"${5|false,true|}\"",
+      "      style-hexpand=\"${6|true,false|}\"",
+      "      style-vexpand=\"${7|true,false|}\"",
+      "      >",
+      "  $0",
+      "</grid>"
+    ],
+    "description": "Content-area grid preset. Defaults to style-hexpand=true and style-vexpand=true for full-page two-dimensional layouts."
+  },
+  "GTK Stack": {
+    "scope": "xml",
+    "prefix": "gtkstack",
+    "body": [
+      "<stack id=\"${1:main_stack}\"",
+      "       transition=\"${2|crossfade,slide,none|}\"",
+      "       duration-ms=\"${3:280}\"",
+      "       vhomogeneous=\"${4|false,true|}\"",
+      "       hhomogeneous=\"${5|false,true|}\"",
+      "       style-hexpand=\"${6|false,true|}\"",
+      "       style-vexpand=\"${7|false,true|}\"",
+      "       >",
+      "  $0",
+      "</stack>"
+    ],
+    "description": "Page switcher container. Use with stack-page children and optional stack-sidebar. Key attrs: id, transition, duration-ms."
+  },
+  "GTK Stack (Fill Content)": {
+    "scope": "xml",
+    "prefix": "gtkstackfill",
+    "body": [
+      "<stack id=\"${1:main_stack}\"",
+      "       transition=\"${2|crossfade,slide,none|}\"",
+      "       duration-ms=\"${3:280}\"",
+      "       vhomogeneous=\"${4|false,true|}\"",
+      "       hhomogeneous=\"${5|false,true|}\"",
+      "       style-hexpand=\"${6|true,false|}\"",
+      "       style-vexpand=\"${7|true,false|}\"",
+      "       >",
+      "  $0",
+      "</stack>"
+    ],
+    "description": "Content-area stack preset. Defaults to style-hexpand=true and style-vexpand=true so pages occupy the available region."
+  },
+  "GTK Stack Sidebar": {
+    "scope": "xml",
+    "prefix": "gtkstacksidebar",
+    "body": [
+      "<stack-sidebar id=\"${1:main_stack_sidebar}\"",
+      "               stack-id=\"${2:main_stack}\"",
+      "               layout-col=\"${3:0}\"",
+      "               layout-row=\"${4:0}\" />"
+    ],
+    "description": "Navigation panel for a stack. Links automatically to pages via stack-id. Typical use: left sidebar for page switching."
+  },
+  "GTK Stack Page": {
+    "scope": "xml",
+    "prefix": "gtkstackpage",
+    "body": [
+      "<stack-page name=\"${1:page_name}\"",
+      "            title=\"${2:Page Title}\"",
+      "            align=\"${3|fill,start,center,end|}\">",
+      "  $0",
+      "</stack-page>"
+    ],
+    "description": "Named page inside stack. Key attrs: name (internal key), title (sidebar label). Place any widgets inside."
+  },
+  "GTK Menubar": {
+    "scope": "xml",
+    "prefix": "gtkmenubar",
+    "body": [
+      "<menubar id=\"${1:main_menubar}\"",
+      "         layout=\"${2|vertical,horizontal|}\"",
+      "         show-arrow-indicators=\"${3|true,false|}\">",
+      "  $0",
+      "</menubar>"
+    ],
+    "description": "Top menu container. Add menu-section children. Key attrs: layout and show-arrow-indicators."
+  },
+  "GTK Menu Section": {
+    "scope": "xml",
+    "prefix": "gtkmenusection",
+    "body": [
+      "<menu-section label=\"${1:File}\">",
+      "  $0",
+      "</menu-section>"
+    ],
+    "description": "Dropdown group inside menubar (File/Edit/etc). Add menu-item children under this section."
+  },
+  "GTK Menu Item": {
+    "scope": "xml",
+    "prefix": "gtkmenuitem",
+    "body": [
+      "<menu-item label=\"${1:Open}\" enabled=\"${2|true,false|}\" on-activate=\"${3:on_menu_about}\" />"
+    ],
+    "description": "Clickable command entry in a menu section. Key attrs: label, enabled, on-activate callback name."
+  },
+  "GTK Button": {
+    "scope": "xml",
+    "prefix": "gtkbutton",
+    "body": [
+      "<button id=\"${1:btn_action}\"",
+      "        label=\"${2:Click me}\"",
+      "        icon-name=\"${3:document-save-symbolic}\"",
+      "        theme-variant=\"${4:primary}\"",
+      "        use-underline=\"${5|false,true|}\"",
+      "        has-frame=\"${6|true,false|}\"",
+      "        can-shrink=\"${7|false,true|}\"",
+      "        icon-size=\"${8:0}\"",
+      "        on-clicked=\"${9:on_button_clicked}\"",
+      "        headerbar-pack=\"${10|end,start,title|}\"",
+      "        layout-col=\"${11:0}\"",
+      "        layout-row=\"${12:0}\" />"
+    ],
+    "description": "Primary action widget. Key attrs: label/icon-name, theme-variant, has-frame, on-clicked callback, optional headerbar-pack."
+  },
+  "GTK Entry": {
+    "scope": "xml",
+    "prefix": "gtkentry",
+    "body": [
+      "<entry id=\"${1:entry_input}\"",
+      "       placeholder=\"${2:Type here}\"",
+      "       default-text=\"${3:}\"",
+      "       purpose-hint=\"${4:}\"",
+      "       password=\"${5|false,true|}\"",
+      "       editable=\"${6|true,false|}\"",
+      "       max-length=\"${7:0}\"",
+      "       on-changed=\"${8:on_entry_changed}\"",
+      "       layout-col=\"${9:0}\"",
+      "       layout-row=\"${10:0}\" />"
+    ],
+    "description": "Single-line text input. Key attrs: placeholder/default-text, password, editable, max-length, on-changed callback."
+  },
+  "GTK Text View": {
+    "scope": "xml",
+    "prefix": "gtktextview",
+    "body": [
+      "<text-view id=\"${1:text_view}\"",
+      "           default-text=\"${2:}\"",
+      "           editable=\"${3|true,false|}\"",
+      "           monospace=\"${4|true,false|}\"",
+      "           wrap=\"${5|false,true|}\"",
+      "           layout-col=\"${6:0}\"",
+      "           layout-row=\"${7:0}\"",
+      "           style-hexpand=\"${8|true,false|}\"",
+      "           style-vexpand=\"${9|true,false|}\" />"
+    ],
+    "description": "Multi-line text area. Key attrs: default-text, editable, monospace, wrap, style-hexpand/style-vexpand."
+  },
+  "GTK Stack + Sidebar Shell": {
+    "scope": "xml",
+    "prefix": "gtkstackshell",
+    "body": [
+      "<grid id=\"${1:main_grid}\"",
+      "      column-spacing=\"${2:12}\"",
+      "      row-spacing=\"${3:12}\"",
+      "      homogeneous-columns=\"false\"",
+      "      homogeneous-rows=\"false\"",
+      "      style-hexpand=\"true\"",
+      "      style-vexpand=\"true\">",
+      "  <stack-sidebar id=\"${4:main_stack_sidebar}\"",
+      "                 stack-id=\"${5:main_stack}\"",
+      "                 layout-col=\"0\"",
+      "                 layout-row=\"0\" />",
+      "  <stack id=\"${5:main_stack}\"",
+      "         transition=\"crossfade\"",
+      "         duration-ms=\"280\"",
+      "         vhomogeneous=\"false\"",
+      "         hhomogeneous=\"false\"",
+      "         style-hexpand=\"true\"",
+      "         style-vexpand=\"true\"",
+      "         layout-col=\"1\"",
+      "         layout-row=\"0\">",
+      "    <stack-page name=\"recent\" title=\"Recent\">",
+      "      $0",
+      "    </stack-page>",
+      "    <stack-page name=\"starred\" title=\"Starred\">",
+      "    </stack-page>",
+      "    <stack-page name=\"home\" title=\"Home\">",
+      "    </stack-page>",
+      "  </stack>",
+      "</grid>"
+    ],
+    "description": "Ready layout with grid + sidebar + stack using unique page names and sane expand defaults."
+  },
+  "GTK Spin Button": {
+    "scope": "xml",
+    "prefix": "gtkspinbutton",
+    "body": [
+      "<spin-button id=\"${1:spin_value}\"",
+      "             min=\"${2:0}\"",
+      "             max=\"${3:100}\"",
+      "             step=\"${4:1}\"",
+      "             value=\"${5:0}\"",
+      "             digits=\"${6:0}\"",
+      "             numeric-only=\"${7|false,true|}\"",
+      "             wrap=\"${8|false,true|}\"",
+      "             on-value-changed=\"${9:on_spin_value_changed}\"",
+      "             layout-col=\"${10:0}\"",
+      "             layout-row=\"${11:0}\" />"
+    ],
+    "description": "Numeric input control with arrows. Key attrs: min/max/step/value, digits, numeric-only, wrap, on-value-changed callback."
+  },
+  "GTK Dropdown": {
+    "scope": "xml",
+    "prefix": "gtkdropdown",
+    "body": [
+      "<dropdown id=\"${1:dropdown_choice}\"",
+      "          options=\"${2:Option A,Option B,Option C}\"",
+      "          selected-index=\"${3:0}\"",
+      "          enable-search=\"${4|false,true|}\"",
+      "          on-selected=\"${5:on_dropdown_selected}\"",
+      "          layout-col=\"${6:0}\"",
+      "          layout-row=\"${7:0}\" />"
+    ],
+    "description": "Option picker list. Key attrs: options (comma-separated), selected-index, enable-search, on-selected callback."
+  },
+  "GTK Calendar": {
+    "scope": "xml",
+    "prefix": "gtkcalendar",
+    "body": [
+      "<calendar id=\"${1:calendar_main}\"",
+      "          show-day-names=\"${2|true,false|}\"",
+      "          show-week-numbers=\"${3|false,true|}\"",
+      "          no-month-change=\"${4|false,true|}\"",
+      "          on-day-selected=\"${5:on_day_selected}\"",
+      "          layout-col=\"${6:0}\"",
+      "          layout-row=\"${7:0}\" />"
+    ],
+    "description": "Date picker calendar. Key attrs: show-day-names, show-week-numbers, no-month-change, on-day-selected callback."
+  },
+  "GTK Label": {
+    "scope": "xml",
+    "prefix": "gtklabel",
+    "body": [
+      "<label id=\"${1:label_main}\"",
+      "       text=\"${2:Label text}\"",
+      "       selectable=\"${3|false,true|}\"",
+      "       wrap=\"${4|false,true|}\"",
+      "       max-width-chars=\"${5:-1}\"",
+      "       ellipsize=\"${6|none,start,middle,end|}\"",
+      "       layout-col=\"${7:0}\"",
+      "       layout-row=\"${8:0}\" />"
+    ],
+    "description": "Display-only text element. Key attrs: text, selectable, wrap, max-width-chars; often used for titles/status."
+  },
+  "GTK Image": {
+    "scope": "xml",
+    "prefix": "gtkimage",
+    "body": [
+      "<image id=\"${1:image_main}\"",
+      "       icon-name=\"${2:applications-development-symbolic}\"",
+      "       file-path=\"${3:}\"",
+      "       pixel-size=\"${4:32}\"",
+      "       keep-aspect=\"${5|true,false|}\"",
+      "       layout-col=\"${6:0}\"",
+      "       layout-row=\"${7:0}\" />"
+    ],
+    "description": "Visual image/icon widget. Use icon-name for themed icons or file-path for assets. Key attrs: pixel-size, keep-aspect."
+  },
+  "GTK Progress Bar": {
+    "scope": "xml",
+    "prefix": "gtkprogressbar",
+    "body": [
+      "<progress-bar id=\"${1:progress_main}\"",
+      "              fraction=\"${2:0.5}\"",
+      "              text=\"${3:Loading}\"",
+      "              show-text=\"${4|true,false|}\"",
+      "              inverted=\"${5|false,true|}\"",
+      "              layout-col=\"${6:0}\"",
+      "              layout-row=\"${7:0}\" />"
+    ],
+    "description": "Task progress indicator. Key attrs: fraction (0.0-1.0), text, show-text, inverted."
+  },
+  "GTK Spinner": {
+    "scope": "xml",
+    "prefix": "gtkspinner",
+    "body": [
+      "<spinner id=\"${1:spinner_main}\"",
+      "         size=\"${2:26}\"",
+      "         spinning=\"${3|true,false|}\"",
+      "         layout-col=\"${4:0}\"",
+      "         layout-row=\"${5:0}\" />"
+    ],
+    "description": "Busy/loading indicator. Key attrs: size and spinning state. Use when work duration is unknown."
+  },
+  "GTK Separator": {
+    "scope": "xml",
+    "prefix": "gtkseparator",
+    "body": [
+      "<separator id=\"${1:sep_main}\"",
+      "           orientation=\"${2|horizontal,vertical|}\"",
+      "           layout-col=\"${3:0}\"",
+      "           layout-row=\"${4:0}\" />"
+    ],
+    "description": "Thin divider line between UI regions. Key attr: orientation (horizontal or vertical)."
+  },
+  "GTK Checkbox": {
+    "scope": "xml",
+    "prefix": "gtkcheckbox",
+    "body": [
+      "<checkbox id=\"${1:check_option}\"",
+      "          label=\"${2:Enable option}\"",
+      "          active=\"${3|false,true|}\"",
+      "          inconsistent=\"${4|false,true|}\"",
+      "          on-toggled=\"${5:on_checkbox_toggled}\"",
+      "          layout-col=\"${6:0}\"",
+      "          layout-row=\"${7:0}\" />"
+    ],
+    "description": "Boolean toggle with label. Key attrs: active, inconsistent (tri-state style), on-toggled callback."
+  },
+  "GTK Switch": {
+    "scope": "xml",
+    "prefix": "gtkswitch",
+    "body": [
+      "<switch id=\"${1:switch_main}\"",
+      "        label=\"${2:Realtime sync}\"",
+      "        active=\"${3|true,false|}\"",
+      "        state=\"${4|true,false|}\"",
+      "        on-active-changed=\"${5:on_switch_changed}\"",
+      "        headerbar-pack=\"${6|end,start,title|}\"",
+      "        layout-col=\"${7:0}\"",
+      "        layout-row=\"${8:0}\" />"
+    ],
+    "description": "Modern on/off switch. Key attrs: active/state, on-active-changed callback, optional headerbar-pack."
+  },
+  "GTK Radio Button": {
+    "scope": "xml",
+    "prefix": "gtkradiobutton",
+    "body": [
+      "<radio-button label=\"${1:Choice}\"",
+      "              id=\"${2:radio_a}\"",
+      "              group-with=\"${3:}\"",
+      "              is-active=\"${4|false,true|}\"",
+      "              on-toggled=\"${5:on_radio_toggled}\"",
+      "              layout-col=\"${6:0}\"",
+      "              layout-row=\"${7:0}\" />"
+    ],
+    "description": "Mutually exclusive choice control. Use group-with to link options; is-active sets default; on-toggled handles changes."
   }
 }

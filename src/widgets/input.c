@@ -89,3 +89,30 @@ GtkWidget *create_spin_button(const spin_button_config *config) {
 
     return spin;
 }
+
+GtkWidget *create_text_view(const text_view_config *config) {
+    GtkWidget *scroll = gtk_scrolled_window_new();
+    GtkWidget *view = gtk_text_view_new();
+
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), view);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
+                                   GTK_POLICY_AUTOMATIC,
+                                   GTK_POLICY_AUTOMATIC);
+
+    if (config != NULL) {
+        GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view));
+        if (config->default_text != NULL) {
+            gtk_text_buffer_set_text(buffer, config->default_text, -1);
+        }
+
+        gtk_text_view_set_editable(GTK_TEXT_VIEW(view), config->editable);
+        gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(view), config->editable);
+        gtk_text_view_set_monospace(GTK_TEXT_VIEW(view), config->monospace);
+        gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(view),
+            config->wrap ? GTK_WRAP_WORD_CHAR : GTK_WRAP_NONE);
+
+        apply_widget_style(scroll, &config->style);
+    }
+
+    return scroll;
+}

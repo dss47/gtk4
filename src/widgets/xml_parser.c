@@ -57,6 +57,9 @@ typedef struct {
 
     /* Menu parsing state for <menubar> trees */
     struct xml_menubar_state *menu_state;
+
+    /* Ignore current subtree when > 0 (used for disabled headerbar blocks). */
+    int skip_depth;
 } parser_state;
 
 typedef struct xml_menu_item_node {
@@ -115,6 +118,39 @@ static bool attr_bool(const gchar **names, const gchar **values,
     return (g_strcmp0(v, "true") == 0 || g_strcmp0(v, "1") == 0);
 }
 
+static bool is_hex_digit(char c) {
+    return (c >= '0' && c <= '9') ||
+           (c >= 'a' && c <= 'f') ||
+           (c >= 'A' && c <= 'F');
+}
+
+static char *normalize_css_color(const char *color) {
+    if (color == NULL || color[0] == '\0') {
+        return NULL;
+    }
+
+    size_t len = strlen(color);
+    if (color[0] == '#') {
+        return g_strdup(color);
+    }
+
+    bool all_hex = (len == 3 || len == 6 || len == 8);
+    if (all_hex) {
+        for (size_t i = 0; i < len; i++) {
+            if (!is_hex_digit(color[i])) {
+                all_hex = false;
+                break;
+            }
+        }
+    }
+
+    if (all_hex) {
+        return g_strdup_printf("#%s", color);
+    }
+
+    return NULL;
+}
+
 static GtkOrientation attr_orientation(const gchar **names,
                                        const gchar **values,
                                        const char *key,
@@ -136,6 +172,19 @@ static GtkAlign attr_align(const gchar **names,
     if (g_strcmp0(v, "center") == 0) return GTK_ALIGN_CENTER;
     if (g_strcmp0(v, "end") == 0) return GTK_ALIGN_END;
     if (g_strcmp0(v, "fill") == 0) return GTK_ALIGN_FILL;
+    return fallback;
+}
+
+static PangoEllipsizeMode attr_ellipsize(const gchar **names,
+                                         const gchar **values,
+                                         const char *key,
+                                         PangoEllipsizeMode fallback) {
+    const char *v = find_attr(names, values, key);
+    if (!v) return fallback;
+    if (g_strcmp0(v, "none") == 0) return PANGO_ELLIPSIZE_NONE;
+    if (g_strcmp0(v, "start") == 0) return PANGO_ELLIPSIZE_START;
+    if (g_strcmp0(v, "middle") == 0) return PANGO_ELLIPSIZE_MIDDLE;
+    if (g_strcmp0(v, "end") == 0) return PANGO_ELLIPSIZE_END;
     return fallback;
 }
 
@@ -166,6 +215,14 @@ static widget_style_config parse_style(const gchar **names,
     if (find_attr(names, values, "style-vexpand")) {
         s.vexpand = attr_bool(names, values, "style-vexpand", false);
         s.set_vexpand = true;
+    }
+    if (find_attr(names, values, "style-sensitive")) {
+        s.sensitive = attr_bool(names, values, "style-sensitive", true);
+        s.set_sensitive = true;
+    }
+    if (find_attr(names, values, "style-visible")) {
+        s.visible = attr_bool(names, values, "style-visible", true);
+        s.set_visible = true;
     }
 
     const char *css = find_attr(names, values, "style-css-class");
@@ -202,10 +259,149 @@ static GtkWidget *current_parent(parser_state *ps) {
     return ps->depth > 0 ? ps->stack[ps->depth - 1] : NULL;
 }
 
+static void apply_headerbar_background(GtkWidget *headerbar,
+                                       const char *background_color) {
+    if (headerbar == NULL || !GTK_IS_HEADER_BAR(headerbar)) {
+        return;
+    }
+
+    char *name = g_strdup_printf("wrapper-headerbar-%p", (void *)headerbar);
+    gtk_widget_set_name(headerbar, name);
+
+    GtkCssProvider *provider = gtk_css_provider_new();
+    char *css;
+    char *normalized = normalize_css_color(background_color);
+    if (normalized != NULL) {
+        css = g_strdup_printf(
+            "headerbar#%s { background-image: none; background-color: %s; }",
+            name,
+            normalized
+        );
+    } else {
+        css = g_strdup_printf(
+            "headerbar#%s { background-image: none; }",
+            name
+        );
+    }
+
+    gtk_css_provider_load_from_string(provider, css);
+    gtk_style_context_add_provider_for_display(
+        gtk_widget_get_display(headerbar),
+        GTK_STYLE_PROVIDER(provider),
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+    );
+
+    g_free(css);
+    g_free(normalized);
+    g_object_unref(provider);
+    g_free(name);
+}
+
+static void apply_headerbar_height(GtkWidget *headerbar, int height) {
+    if (headerbar == NULL || !GTK_IS_HEADER_BAR(headerbar) || height <= 0) {
+        return;
+    }
+
+    gtk_widget_set_size_request(headerbar, -1, height);
+
+    const char *name = gtk_widget_get_name(headerbar);
+    if (name == NULL || name[0] == '\0') {
+        return;
+    }
+
+    GtkCssProvider *provider = gtk_css_provider_new();
+    char *css = g_strdup_printf(
+        "headerbar#%s {"
+        " min-height: %dpx;"
+        " padding-top: 0;"
+        " padding-bottom: 0;"
+        "}"
+        "headerbar#%s > * {"
+        " min-height: %dpx;"
+        " margin-top: 0;"
+        " margin-bottom: 0;"
+        " padding-top: 0;"
+        " padding-bottom: 0;"
+        "}",
+        name, height,
+        name, height
+    );
+
+    gtk_css_provider_load_from_string(provider, css);
+    gtk_style_context_add_provider_for_display(
+        gtk_widget_get_display(headerbar),
+        GTK_STYLE_PROVIDER(provider),
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+    );
+
+    g_free(css);
+    g_object_unref(provider);
+}
+
+static void apply_headerbar_options(GtkWidget *headerbar,
+                                    const gchar **names,
+                                    const gchar **values) {
+    if (!GTK_IS_HEADER_BAR(headerbar)) {
+        return;
+    }
+
+    const char *title = find_attr(names, values, "title");
+    const char *subtitle = find_attr(names, values, "subtitle");
+    if (title != NULL && title[0] != '\0') {
+        GtkWidget *title_label = gtk_label_new(title);
+        gtk_widget_add_css_class(title_label, "title");
+        gtk_widget_set_valign(title_label, GTK_ALIGN_CENTER);
+        gtk_header_bar_set_title_widget(GTK_HEADER_BAR(headerbar), title_label);
+    }
+    if (subtitle != NULL && subtitle[0] != '\0') {
+        GtkWidget *subtitle_label = gtk_label_new(subtitle);
+        gtk_widget_add_css_class(subtitle_label, "dim-label");
+        gtk_widget_set_valign(subtitle_label, GTK_ALIGN_CENTER);
+        gtk_header_bar_pack_end(GTK_HEADER_BAR(headerbar), subtitle_label);
+    }
+
+    bool show_title_buttons = attr_bool(names, values, "show-title-buttons", true);
+    bool show_minimize = attr_bool(names, values, "show-minimize-button", true);
+    bool show_maximize = attr_bool(names, values, "show-maximize-button", true);
+    bool show_close = attr_bool(names, values, "show-close-button", true);
+
+    gtk_header_bar_set_show_title_buttons(GTK_HEADER_BAR(headerbar), show_title_buttons);
+
+    GString *controls = g_string_new("");
+    if (show_minimize) {
+        g_string_append(controls, "minimize");
+    }
+    if (show_maximize) {
+        if (controls->len > 0) {
+            g_string_append_c(controls, ',');
+        }
+        g_string_append(controls, "maximize");
+    }
+    if (show_close) {
+        if (controls->len > 0) {
+            g_string_append_c(controls, ',');
+        }
+        g_string_append(controls, "close");
+    }
+
+    char *layout = g_strdup_printf(":%s", controls->str);
+    gtk_header_bar_set_decoration_layout(GTK_HEADER_BAR(headerbar), layout);
+    g_free(layout);
+    g_string_free(controls, TRUE);
+
+    apply_headerbar_height(headerbar, attr_int(names, values, "height", 0));
+    apply_headerbar_background(headerbar,
+                               find_attr(names, values, "background-color"));
+}
+
 static void add_to_parent_at(parser_state *ps, GtkWidget *widget,
                              int col, int row, int colspan, int rowspan) {
     GtkWidget *parent = current_parent(ps);
     if (parent) {
+        if (GTK_IS_HEADER_BAR(parent)) {
+            gtk_header_bar_pack_end(GTK_HEADER_BAR(parent), widget);
+            return;
+        }
         container_add(parent, widget, col, row, colspan, rowspan);
     }
 }
@@ -213,6 +409,19 @@ static void add_to_parent_at(parser_state *ps, GtkWidget *widget,
 /* Add a newly-created widget to the current parent container */
 static void add_to_parent(parser_state *ps, GtkWidget *widget, 
                           const gchar **names, const gchar **values) {
+    GtkWidget *parent = current_parent(ps);
+    if (parent && GTK_IS_HEADER_BAR(parent)) {
+        const char *pack = find_attr(names, values, "headerbar-pack");
+        if (g_strcmp0(pack, "start") == 0) {
+            gtk_header_bar_pack_start(GTK_HEADER_BAR(parent), widget);
+        } else if (g_strcmp0(pack, "title") == 0) {
+            gtk_header_bar_set_title_widget(GTK_HEADER_BAR(parent), widget);
+        } else {
+            gtk_header_bar_pack_end(GTK_HEADER_BAR(parent), widget);
+        }
+        return;
+    }
+
     int col = attr_int(names, values, "layout-col", 0);
     int row = attr_int(names, values, "layout-row", 0);
     int colspan = attr_int(names, values, "layout-colspan", 1);
@@ -354,8 +563,17 @@ static GtkWidget *build_menubar_widget(parser_state *ps,
 
 static GtkWidget *handle_window(parser_state *ps,
                                 const gchar **names, const gchar **values) {
+    bool resizable = attr_bool(names, values, "resizable", true);
+    if (find_attr(names, values, "resizable") == NULL) {
+        resizable = attr_bool(names, values, "resizeable", true);
+    }
+
     window_config cfg = {
         .title          = find_attr(names, values, "title"),
+        .headerbar_title = NULL,
+        .headerbar_subtitle = NULL,
+        .headerbar_background_color = NULL,
+        .headerbar_height = 0,
         .icon_name      = find_attr(names, values, "icon-name"),
         .widget_name    = find_attr(names, values, "widget-name"),
         .background_image_path = find_attr(names, values, "background-image"),
@@ -365,9 +583,14 @@ static GtkWidget *handle_window(parser_state *ps,
         .min_height     = attr_int(names, values, "min-height", 0),
         .max_width      = attr_int(names, values, "max-width", 0),
         .max_height     = attr_int(names, values, "max-height", 0),
-        .resizable      = attr_bool(names, values, "resizable", true),
+        .resizable      = resizable,
         .decorated      = attr_bool(names, values, "decorated", true),
         .modal          = attr_bool(names, values, "modal", false),
+        .use_headerbar  = attr_bool(names, values, "use-headerbar", false),
+        .headerbar_show_title_buttons = true,
+        .headerbar_show_close_button = true,
+        .headerbar_show_minimize_button = true,
+        .headerbar_show_maximize_button = true,
         .maximized      = attr_bool(names, values, "maximized", false),
         .present_on_create = false,
         .style          = parse_style(names, values),
@@ -469,6 +692,20 @@ static GtkWidget *handle_entry(parser_state *ps,
     return create_entry(&cfg);
 }
 
+static GtkWidget *handle_text_view(parser_state *ps,
+                                   const gchar **names,
+                                   const gchar **values) {
+    (void)ps;
+    text_view_config cfg = {
+        .default_text = find_attr(names, values, "default-text"),
+        .editable = attr_bool(names, values, "editable", true),
+        .monospace = attr_bool(names, values, "monospace", true),
+        .wrap = attr_bool(names, values, "wrap", false),
+        .style = parse_style(names, values),
+    };
+    return create_text_view(&cfg);
+}
+
 static GtkWidget *handle_spin_button(parser_state *ps,
                                      const gchar **names,
                                      const gchar **values) {
@@ -538,7 +775,8 @@ static GtkWidget *handle_label(parser_state *ps,
         .wrap            = attr_bool(names, values, "wrap", false),
         .max_width_chars = attr_int(names, values, "max-width-chars", -1),
         .style           = parse_style(names, values),
-        .ellipsize       = find_attr(names, values, "ellipsize") ? PANGO_ELLIPSIZE_END : PANGO_ELLIPSIZE_NONE,
+        .ellipsize       = attr_ellipsize(names, values, "ellipsize",
+                                          PANGO_ELLIPSIZE_NONE),
     };
     return create_label(&cfg);
 }
@@ -663,6 +901,12 @@ static void xml_start_element(GMarkupParseContext *context,
     (void)context;
     (void)error;
     parser_state *ps = user_data;
+
+    if (ps->skip_depth > 0) {
+        ps->skip_depth++;
+        return;
+    }
+
     GtkWidget *widget = NULL;
     bool is_container = false;
 
@@ -754,6 +998,31 @@ static void xml_start_element(GMarkupParseContext *context,
         widget = handle_stack(ps, attribute_names, attribute_values);
         is_container = true;
     }
+    else if (g_strcmp0(element_name, "headerbar") == 0) {
+        GtkWidget *parent_window = current_parent(ps);
+        if (!parent_window || !GTK_IS_WINDOW(parent_window)) {
+            g_warning("xml_parser: headerbar must be inside window");
+            return;
+        }
+
+        int use_headerbar = GPOINTER_TO_INT(
+            g_object_get_data(G_OBJECT(parent_window), "wrapper-use-headerbar")
+        );
+        if (!use_headerbar) {
+            ps->skip_depth = 1;
+            return;
+        }
+
+        widget = gtk_window_get_titlebar(GTK_WINDOW(parent_window));
+        if (widget == NULL || !GTK_IS_HEADER_BAR(widget)) {
+            widget = gtk_header_bar_new();
+            gtk_window_set_titlebar(GTK_WINDOW(parent_window), widget);
+        }
+        widget_style_config hb_style = parse_style(attribute_names, attribute_values);
+        apply_widget_style(widget, &hb_style);
+        apply_headerbar_options(widget, attribute_names, attribute_values);
+        is_container = true;
+    }
     /* ── Leaf widgets ── */
     else if (g_strcmp0(element_name, "stack-sidebar") == 0) {
         widget = handle_stack_sidebar(ps, attribute_names, attribute_values);
@@ -763,6 +1032,9 @@ static void xml_start_element(GMarkupParseContext *context,
     }
     else if (g_strcmp0(element_name, "entry") == 0) {
         widget = handle_entry(ps, attribute_names, attribute_values);
+    }
+    else if (g_strcmp0(element_name, "text-view") == 0) {
+        widget = handle_text_view(ps, attribute_names, attribute_values);
     }
     else if (g_strcmp0(element_name, "spin-button") == 0) {
         widget = handle_spin_button(ps, attribute_names, attribute_values);
@@ -829,7 +1101,8 @@ static void xml_start_element(GMarkupParseContext *context,
     if (ps->depth == 0) {
         ps->result = widget;
     } else {
-        if (g_strcmp0(element_name, "stack-page") != 0) {
+        if (g_strcmp0(element_name, "stack-page") != 0 &&
+            g_strcmp0(element_name, "headerbar") != 0) {
             add_to_parent(ps, widget, attribute_names, attribute_values);
         }
     }
@@ -847,6 +1120,11 @@ static void xml_end_element(GMarkupParseContext *context,
     (void)context;
     (void)error;
     parser_state *ps = user_data;
+
+    if (ps->skip_depth > 0) {
+        ps->skip_depth--;
+        return;
+    }
 
     if (g_strcmp0(element_name, "menu-item") == 0) {
         if (ps->menu_state && ps->menu_state->item_stack->len > 0) {
@@ -889,6 +1167,7 @@ static void xml_end_element(GMarkupParseContext *context,
         g_strcmp0(element_name, "box") == 0 ||
         g_strcmp0(element_name, "grid") == 0 ||
         g_strcmp0(element_name, "stack") == 0 ||
+        g_strcmp0(element_name, "headerbar") == 0 ||
         g_strcmp0(element_name, "stack-page") == 0) {
         if (ps->depth > 0)
             ps->depth--;

@@ -19,6 +19,7 @@ static void apply_theme_variant(GtkWidget *button, const char *variant) {
 GtkWidget *create_button(const button_config *config) {
     GtkWidget *button;
     const char *label;
+    widget_style_config effective_style;
 
     if (config == NULL) {
         return gtk_button_new();
@@ -41,8 +42,26 @@ GtkWidget *create_button(const button_config *config) {
         gtk_button_set_child(GTK_BUTTON(button), content);
     }
 
+    effective_style = config->style;
+    if (!effective_style.set_hexpand) {
+        effective_style.set_hexpand = true;
+        effective_style.hexpand = false;
+    }
+    if (!effective_style.set_vexpand) {
+        effective_style.set_vexpand = true;
+        effective_style.vexpand = false;
+    }
+    if (!effective_style.set_halign && effective_style.width_request == 0) {
+        effective_style.set_halign = true;
+        effective_style.halign = GTK_ALIGN_START;
+    }
+    if (!effective_style.set_valign) {
+        effective_style.set_valign = true;
+        effective_style.valign = GTK_ALIGN_START;
+    }
+
     apply_theme_variant(button, config->theme_variant);
-    apply_widget_style(button, &config->style);
+    apply_widget_style(button, &effective_style);
 
     if (config->on_clicked) {
         g_signal_connect(button, "clicked", G_CALLBACK(config->on_clicked), config->user_data);
