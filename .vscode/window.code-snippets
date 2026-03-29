@@ -5,7 +5,7 @@
     "prefix": "win",
     "body": [
       "<window xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"",
-      "        xsi:noNamespaceSchemaLocation=\"schemas/ui-wrapper.xsd\">",
+      "        xsi:noNamespaceSchemaLocation=\"schemas/ui-wrapper.xsd\"  title=\"${1:Window Title}\" width=\"${2:800}\" height=\"${3:600}\" resizable=\"true\" draggable=\"true\" closeable=\"true\" minimizable=\"true\" maximizable=\"true\">",
       "    $0",
       "</window>"
     ],
