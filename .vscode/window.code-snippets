@@ -11,4 +11,25 @@
     ],
     "description": "Generates the root window element for the UI wrapper"
   }
+  ,"GTK Window Wrapper": {
+    "prefix": "gtkwin",
+    "body": [
+      "<window xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"",
+      "       xsi:noNamespaceSchemaLocation=\"schemas/ui-wrapper.xsd\"",
+      "       title=\"${1:Window Title}\"",
+      "        icon-name=\"${2:applications-development-symbolic}\"",
+      "        widget-name=\"${3:wrapper-window}\"",
+      "        background-image=\"${4:image1.png}\"",
+      "        default-width=\"${5:700}\"",
+      "        default-height=\"${6:300}\"",
+      "        min-width=\"${7:400}\"",
+      "        min-height=\"${8:300}\"",
+      "        resizable=\"${9|true,false|}\"",
+      "        decorated=\"${10|true,false|}\"",
+      "        >",
+      "\t$0",
+      "</window>"
+    ],
+    "description": "Generate a GTK UI Wrapper Window with defaults"
+  }
 }
