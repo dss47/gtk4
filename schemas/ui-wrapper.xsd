@@ -68,6 +68,7 @@
     <xs:choice>
       <xs:element ref="box"/>
       <xs:element ref="grid"/>
+      <xs:element ref="menubar"/>
       <xs:element ref="stack"/>
       <xs:element ref="stack-sidebar"/>
       <xs:element ref="button"/>
@@ -178,6 +179,37 @@
       <xs:attribute name="title" type="xs:string"/>
       <xs:attribute name="align" type="alignType"/>
       <xs:attributeGroup ref="globalWidgetAttrs"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="menubar">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="menu-section" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="layout" type="orientationType"/>
+      <xs:attribute name="show-arrow-indicators" type="boolLike"/>
+      <xs:attributeGroup ref="globalWidgetAttrs"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="menu-section">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="menu-item" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="label" type="xs:string" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="menu-item">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="menu-item" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="label" type="xs:string" use="required"/>
+      <xs:attribute name="enabled" type="boolLike"/>
+      <xs:attribute name="on-activate" type="xs:string"/>
     </xs:complexType>
   </xs:element>
 

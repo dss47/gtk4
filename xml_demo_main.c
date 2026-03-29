@@ -20,6 +20,8 @@ static void xml_demo_activate(GtkApplication *app, gpointer user_data) {
 
     /* Map XML callback names to the actual functions defined in handlers.c */
     const xml_callback_entry callbacks[] = {
+        {"on_menu_about",       (void*)on_menu_about},
+        {"on_menu_quit",        (void*)on_menu_quit},
         {"on_entry_changed",      (void*)on_entry_changed},
         {"on_role_selected",      (void*)on_role_selected},
         {"on_spin_value_changed", (void*)on_spin_value_changed},

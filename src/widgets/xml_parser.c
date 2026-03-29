@@ -4,6 +4,7 @@
 #include "widgets/container.h"
 #include "widgets/display.h"
 #include "widgets/input.h"
+#include "widgets/menu.h"
 #include "widgets/separator.h"
 #include "widgets/toggle.h"
 #include "widgets/window.h"
@@ -53,7 +54,36 @@ typedef struct {
 
     /* For dropdown options memory management */
     GPtrArray *string_arrays;
+
+    /* Menu parsing state for <menubar> trees */
+    struct xml_menubar_state *menu_state;
 } parser_state;
+
+typedef struct xml_menu_item_node {
+    char *label;
+    bool enabled;
+    menu_item_callback on_activate;
+    gpointer user_data;
+    GPtrArray *children; /* xml_menu_item_node* */
+} xml_menu_item_node;
+
+typedef struct {
+    char *label;
+    GPtrArray *items; /* xml_menu_item_node* */
+} xml_menu_section_node;
+
+typedef struct xml_menubar_state {
+    GPtrArray *sections; /* xml_menu_section_node* */
+    GPtrArray *item_stack; /* xml_menu_item_node* */
+    xml_menu_section_node *current_section;
+    widget_style_config style;
+    int layout_col;
+    int layout_row;
+    int layout_colspan;
+    int layout_rowspan;
+    menu_layout_mode layout;
+    bool show_arrow_indicators;
+} xml_menubar_state;
 
 /* ── Helpers ── */
 
@@ -172,17 +202,152 @@ static GtkWidget *current_parent(parser_state *ps) {
     return ps->depth > 0 ? ps->stack[ps->depth - 1] : NULL;
 }
 
+static void add_to_parent_at(parser_state *ps, GtkWidget *widget,
+                             int col, int row, int colspan, int rowspan) {
+    GtkWidget *parent = current_parent(ps);
+    if (parent) {
+        container_add(parent, widget, col, row, colspan, rowspan);
+    }
+}
+
 /* Add a newly-created widget to the current parent container */
 static void add_to_parent(parser_state *ps, GtkWidget *widget, 
                           const gchar **names, const gchar **values) {
-    GtkWidget *parent = current_parent(ps);
-    if (parent) {
-        int col = attr_int(names, values, "layout-col", 0);
-        int row = attr_int(names, values, "layout-row", 0);
-        int colspan = attr_int(names, values, "layout-colspan", 1);
-        int rowspan = attr_int(names, values, "layout-rowspan", 1);
-        container_add(parent, widget, col, row, colspan, rowspan);
+    int col = attr_int(names, values, "layout-col", 0);
+    int row = attr_int(names, values, "layout-row", 0);
+    int colspan = attr_int(names, values, "layout-colspan", 1);
+    int rowspan = attr_int(names, values, "layout-rowspan", 1);
+    add_to_parent_at(ps, widget, col, row, colspan, rowspan);
+}
+
+static xml_menu_item_node *menu_item_node_new(void) {
+    xml_menu_item_node *node = g_new0(xml_menu_item_node, 1);
+    node->enabled = true;
+    node->children = g_ptr_array_new();
+    return node;
+}
+
+static void menu_item_node_free(xml_menu_item_node *node) {
+    if (!node) return;
+    for (guint i = 0; i < node->children->len; i++) {
+        menu_item_node_free(g_ptr_array_index(node->children, i));
     }
+    g_ptr_array_free(node->children, TRUE);
+    g_free(node->label);
+    g_free(node);
+}
+
+static xml_menu_section_node *menu_section_node_new(void) {
+    xml_menu_section_node *section = g_new0(xml_menu_section_node, 1);
+    section->items = g_ptr_array_new();
+    return section;
+}
+
+static void menu_section_node_free(xml_menu_section_node *section) {
+    if (!section) return;
+    for (guint i = 0; i < section->items->len; i++) {
+        menu_item_node_free(g_ptr_array_index(section->items, i));
+    }
+    g_ptr_array_free(section->items, TRUE);
+    g_free(section->label);
+    g_free(section);
+}
+
+static xml_menubar_state *menubar_state_new(void) {
+    xml_menubar_state *state = g_new0(xml_menubar_state, 1);
+    state->sections = g_ptr_array_new();
+    state->item_stack = g_ptr_array_new();
+    state->layout_col = 0;
+    state->layout_row = 0;
+    state->layout_colspan = 1;
+    state->layout_rowspan = 1;
+    state->layout = MENU_LAYOUT_VERTICAL;
+    state->show_arrow_indicators = true;
+    return state;
+}
+
+static void menubar_state_free(xml_menubar_state *state) {
+    if (!state) return;
+    for (guint i = 0; i < state->sections->len; i++) {
+        menu_section_node_free(g_ptr_array_index(state->sections, i));
+    }
+    g_ptr_array_free(state->sections, TRUE);
+    g_ptr_array_free(state->item_stack, TRUE);
+    g_free(state);
+}
+
+static void materialize_menu_item(const xml_menu_item_node *src,
+                                  menu_item_config *dst,
+                                  GPtrArray *allocations) {
+    dst->label = src->label;
+    dst->enabled = src->enabled;
+    dst->on_activate = src->on_activate;
+    dst->user_data = src->user_data;
+
+    if (src->children->len > 0) {
+        menu_item_config *children =
+            g_new0(menu_item_config, src->children->len);
+        g_ptr_array_add(allocations, children);
+        dst->kind = MENU_ITEM_SUBMENU;
+        dst->children = children;
+        dst->child_count = src->children->len;
+        dst->on_activate = NULL;
+        dst->user_data = NULL;
+        for (guint i = 0; i < src->children->len; i++) {
+            materialize_menu_item(g_ptr_array_index(src->children, i),
+                                  &children[i], allocations);
+        }
+    } else {
+        dst->kind = MENU_ITEM_ACTION;
+        dst->children = NULL;
+        dst->child_count = 0;
+    }
+}
+
+static GtkWidget *build_menubar_widget(parser_state *ps,
+                                       const xml_menubar_state *state) {
+    if (!state || state->sections->len == 0) {
+        return NULL;
+    }
+
+    GPtrArray *allocations = g_ptr_array_new();
+    menu_section_config *sections =
+        g_new0(menu_section_config, state->sections->len);
+    g_ptr_array_add(allocations, sections);
+
+    for (guint i = 0; i < state->sections->len; i++) {
+        xml_menu_section_node *src_section = g_ptr_array_index(state->sections, i);
+        sections[i].label = src_section->label;
+        sections[i].item_count = src_section->items->len;
+        if (src_section->items->len > 0) {
+            menu_item_config *items =
+                g_new0(menu_item_config, src_section->items->len);
+            g_ptr_array_add(allocations, items);
+            sections[i].items = items;
+            for (guint j = 0; j < src_section->items->len; j++) {
+                materialize_menu_item(g_ptr_array_index(src_section->items, j),
+                                      &items[j], allocations);
+            }
+        } else {
+            sections[i].items = NULL;
+        }
+    }
+
+    GtkWidget *menubar = create_menubar(&(menubar_config){
+        .sections = sections,
+        .section_count = state->sections->len,
+        .action_map = G_ACTION_MAP(ps->ctx->app),
+        .layout = state->layout,
+        .show_arrow_indicators = state->show_arrow_indicators,
+        .style = state->style,
+    });
+
+    for (guint i = 0; i < allocations->len; i++) {
+        g_free(g_ptr_array_index(allocations, i));
+    }
+    g_ptr_array_free(allocations, TRUE);
+
+    return menubar;
 }
 
 /* ── Element handlers ── */
@@ -501,6 +666,77 @@ static void xml_start_element(GMarkupParseContext *context,
     GtkWidget *widget = NULL;
     bool is_container = false;
 
+    if (g_strcmp0(element_name, "menubar") == 0) {
+        if (ps->menu_state != NULL) {
+            g_warning("xml_parser: nested menubar is not supported");
+            return;
+        }
+        ps->menu_state = menubar_state_new();
+        ps->menu_state->style = parse_style(attribute_names, attribute_values);
+        ps->menu_state->layout_col = attr_int(attribute_names, attribute_values,
+                                              "layout-col", 0);
+        ps->menu_state->layout_row = attr_int(attribute_names, attribute_values,
+                                              "layout-row", 0);
+        ps->menu_state->layout_colspan = attr_int(attribute_names, attribute_values,
+                                                  "layout-colspan", 1);
+        ps->menu_state->layout_rowspan = attr_int(attribute_names, attribute_values,
+                                                  "layout-rowspan", 1);
+        ps->menu_state->show_arrow_indicators =
+            attr_bool(attribute_names, attribute_values,
+                      "show-arrow-indicators", true);
+
+        const char *layout = find_attr(attribute_names, attribute_values, "layout");
+        if (g_strcmp0(layout, "horizontal") == 0) {
+            ps->menu_state->layout = MENU_LAYOUT_HORIZONTAL;
+        } else {
+            ps->menu_state->layout = MENU_LAYOUT_VERTICAL;
+        }
+        return;
+    }
+
+    if (g_strcmp0(element_name, "menu-section") == 0) {
+        if (!ps->menu_state) {
+            g_warning("xml_parser: menu-section must be inside menubar");
+            return;
+        }
+        xml_menu_section_node *section = menu_section_node_new();
+        const char *label = find_attr(attribute_names, attribute_values, "label");
+        section->label = g_strdup(label ? label : "");
+        g_ptr_array_add(ps->menu_state->sections, section);
+        ps->menu_state->current_section = section;
+        return;
+    }
+
+    if (g_strcmp0(element_name, "menu-item") == 0) {
+        if (!ps->menu_state) {
+            g_warning("xml_parser: menu-item must be inside menubar");
+            return;
+        }
+        xml_menu_item_node *item = menu_item_node_new();
+        const char *label = find_attr(attribute_names, attribute_values, "label");
+        const char *cb_name = find_attr(attribute_names, attribute_values, "on-activate");
+        item->label = g_strdup(label ? label : "");
+        item->enabled = attr_bool(attribute_names, attribute_values, "enabled", true);
+        item->on_activate = (menu_item_callback)lookup_callback(ps, cb_name);
+        item->user_data = ps->ctx->app;
+
+        if (ps->menu_state->item_stack->len > 0) {
+            xml_menu_item_node *parent = g_ptr_array_index(
+                ps->menu_state->item_stack,
+                ps->menu_state->item_stack->len - 1);
+            g_ptr_array_add(parent->children, item);
+        } else if (ps->menu_state->current_section) {
+            g_ptr_array_add(ps->menu_state->current_section->items, item);
+        } else {
+            g_warning("xml_parser: menu-item must be inside menu-section");
+            menu_item_node_free(item);
+            return;
+        }
+
+        g_ptr_array_add(ps->menu_state->item_stack, item);
+        return;
+    }
+
     /* ── Containers (push onto stack) ── */
     if (g_strcmp0(element_name, "window") == 0) {
         widget = handle_window(ps, attribute_names, attribute_values);
@@ -612,6 +848,42 @@ static void xml_end_element(GMarkupParseContext *context,
     (void)error;
     parser_state *ps = user_data;
 
+    if (g_strcmp0(element_name, "menu-item") == 0) {
+        if (ps->menu_state && ps->menu_state->item_stack->len > 0) {
+            g_ptr_array_set_size(ps->menu_state->item_stack,
+                                 ps->menu_state->item_stack->len - 1);
+        }
+        return;
+    }
+
+    if (g_strcmp0(element_name, "menu-section") == 0) {
+        if (ps->menu_state) {
+            ps->menu_state->current_section = NULL;
+        }
+        return;
+    }
+
+    if (g_strcmp0(element_name, "menubar") == 0) {
+        if (!ps->menu_state) {
+            return;
+        }
+        GtkWidget *menubar = build_menubar_widget(ps, ps->menu_state);
+        if (menubar) {
+            if (ps->depth == 0) {
+                ps->result = menubar;
+            } else {
+                add_to_parent_at(ps, menubar,
+                                 ps->menu_state->layout_col,
+                                 ps->menu_state->layout_row,
+                                 ps->menu_state->layout_colspan,
+                                 ps->menu_state->layout_rowspan);
+            }
+        }
+        menubar_state_free(ps->menu_state);
+        ps->menu_state = NULL;
+        return;
+    }
+
     /* Pop from stack when closing a container element */
     if (g_strcmp0(element_name, "window") == 0 ||
         g_strcmp0(element_name, "box") == 0 ||
@@ -651,6 +923,7 @@ GtkWidget *xml_parse_file(const char *filename, const xml_parse_context *ctx) {
         .depth = 0,
         .result = NULL,
         .string_arrays = g_ptr_array_new(),
+        .menu_state = NULL,
     };
     memset(ps.stack, 0, sizeof(ps.stack));
 

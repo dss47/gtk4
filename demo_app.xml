@@ -18,6 +18,33 @@
        style-vexpand="true"
        >
 
+              <menubar>
+                     <menu-section label="File">
+                            <menu-item label="New"
+                                                                on-activate="on_menu_about" />
+                            <menu-item label="Open"
+                                                                on-activate="on_menu_about" />
+                            <menu-item label="Recent">
+                                   <menu-item label="Project A"
+                                                                       on-activate="on_menu_about" />
+                                   <menu-item label="Project B"
+                                                                       on-activate="on_menu_about" />
+                            </menu-item>
+                            <menu-item label="Export">
+                                   <menu-item label="PNG"
+                                                                       on-activate="on_menu_about" />
+                                   <menu-item label="PDF"
+                                                                       on-activate="on_menu_about" />
+                            </menu-item>
+                            <menu-item label="Quit"
+                                                                on-activate="on_menu_quit" />
+                     </menu-section>
+                     <menu-section label="Help">
+                            <menu-item label="About"
+                                                                on-activate="on_menu_about" />
+                     </menu-section>
+              </menubar>
+
     <grid column-spacing="0"
           style-hexpand="true"
           style-vexpand="true"
